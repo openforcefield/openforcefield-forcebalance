@@ -20,9 +20,8 @@ reference: https://github.com/MolSSI/QCFractal/tree/master/examples/local_datase
         to run the container in background with shared default port `27017`
 
 2. Install anaconda
-    ```
-    https://www.anaconda.com/download/#linux
-    ```
+    - https://www.anaconda.com/download/#linux
+
 
 3. clone the QCFractal git repository:
     ```
@@ -64,7 +63,7 @@ reference: https://github.com/MolSSI/QCFractal/tree/master/examples/local_datase
     cd QCFractal/examples/parsl_torsiondrive
     python compute_torsion.py
     ```
-    The other terminal windows of `parsl_manager` and `qcfractal-server` should status of the jobs running. The example job should finish fairly quick.
+    The other terminal windows of `parsl_manager` and `qcfractal-server` should show status of the jobs running. The example job should finish fairly quick.
 
 10. After the job finishes, run the script to pull data from server and form a ForceBalance target:
     ```

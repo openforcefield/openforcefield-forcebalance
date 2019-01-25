@@ -15,7 +15,7 @@ reference: https://github.com/MolSSI/QCFractal/tree/master/examples/local_datase
         to pull the official MongoDB image from DockerHub
         Then run
         ```
-        docker run -p 27017:27017 mongo -d
+        docker run -p 27017:27017 -d mongo
         ```
         to run the container in background with shared default port `27017`
 

@@ -2,8 +2,11 @@
 
 import os
 import copy
+import time
+import collections
 from forcebalance.molecule import Molecule, Elements, bohr2ang
 import qcportal as ptl
+
 
 class FBTargetBuilder:
     def __init__(self, mol2_file, conf_file):
@@ -31,16 +34,10 @@ class FBTargetBuilder:
 
     def master(self):
 
-        # create the molecule on server
-        self.client.add_molecules([self.qc_mol])
-
         # submit initial optimization
-        job = self.submit_single_optimization(self.qc_mol)
-        self.wait_jobs([job])
-        self.qc_mol = self.get_optimized_molecule(job)
-
-        # add the optimized molecule to server
-        self.client.add_molecules([self.qc_mol])
+        job_id = self.submit_single_optimization(self.qc_mol)
+        self.wait_jobs([job_id])
+        self.qc_mol = self.get_optimized_molecule(job_id)
 
         # submit bond streching jobs
         grid_opt_jobs = self.submit_bond_streching_jobs()
@@ -85,11 +82,13 @@ class FBTargetBuilder:
                 "program": "psi4"
             },
         }
-        r = self.client.add_procedure("optimization", "geometric", options, qc_mol)
+        mol_ret = self.client.add_molecules([self.qc_mol])
+        r = self.client.add_procedure("optimization", "geometric", options, mol_ret)
         assert len(r.ids) == 1
         return r.ids[0]
 
     def submit_bond_streching_jobs(self):
+        mol_id = self.client.add_molecules([self.qc_mol])[0]
         grid_opt_option_template = {
             "keywords": {
                 "preoptimization": True,
@@ -113,7 +112,7 @@ class FBTargetBuilder:
                 "keywords": None,
                 "program": "psi4",
             },
-            "initial_molecule": self.qc_mol,
+            "initial_molecule": mol_id,
         }
         all_job_options = []
         # perturb the length of each bond by -30%, -20%, -10%, -5%, 5% ...
@@ -123,10 +122,12 @@ class FBTargetBuilder:
             job_option['keywords']['scans'][0]['indices'] = list(bond)
             job_option['keywords']['scans'][0]['steps'] = strech_steps
             all_job_options.append(job_option)
+        print(f"Submitting {len(all_job_options)} bond streching grid opt jobs")
         r = self.client.add_service(all_job_options)
         return r.ids
 
     def submit_angle_bending_jobs(self):
+        mol_id = self.client.add_molecules([self.qc_mol])[0]
         grid_opt_option_template = {
             "keywords": {
                 "preoptimization": True,
@@ -150,7 +151,7 @@ class FBTargetBuilder:
                 "keywords": None,
                 "program": "psi4",
             },
-            "initial_molecule": self.qc_mol,
+            "initial_molecule": mol_id,
         }
         angles = self.m.find_angles()
         # perturb the value of each angle by -30, -20, -10, 5, 10 ...
@@ -161,6 +162,7 @@ class FBTargetBuilder:
             job_option['keywords']['scans'][0]['indices'] = list(angle)
             job_option['keywords']['scans'][0]['steps'] = angle_bend_steps
             all_job_options.append(job_option)
+        print(f"Submitting {len(all_job_options)} angle bending grid opt jobs")
         r = self.client.add_service(all_job_options)
         return r.ids
 
@@ -173,12 +175,50 @@ class FBTargetBuilder:
 
     def get_optimized_molecule(self, job_id):
         # get the optimized molecule from a finished job
-        qc_mol = 1
-        return qc_mol
+        qr = self.client.query_procedures({'id':job_id})[0]
+        return qr.get_final_molecule()
 
-    def wait_jobs(self, job_list):
-        # waiting for all jobs in job_list to finish
-        return None
+    def get_grid_optimiztion_results(self, grid_opt_jobs):
+        res = {}
+        for jid in grid_opt_jobs:
+            r = self.client.query_procedures({'id':jid})[0]
+            # get final energies and geometries for each grid
+        return res
+
+
+
+    def wait_jobs(self, job_ids, time_interval=5, verbose=True):
+        while True:
+            d_status = collections.defaultdict(int)
+            for jid in job_ids:
+                # results = self.client.check_tasks({'id': jid})
+                # if results:
+                #     r = results[0]
+                #     status = r['STATUS']
+                #     if status == 'ERROR':
+                #         print(f"Error found in job {jid}")
+                #         qr = self.client.query_procedures({'id':jid})[0]
+                #         err = qr.get_error()
+                #         if err is not None:
+                #             print("Error message:")
+                #             print(err.err_message)
+                #     d_status[status] += 1
+                r = self.client.query_procedures({'id':jid})[0]
+                status = r.status.value # get string value from RecordStatusEnum
+                if r.status == 'ERROR':
+                    print(f"Error found in job {jid}")
+                    err = r.get_error()
+                    if err is not None:
+                        print("Error message:")
+                        print(err.err_message)
+                d_status[status] += 1
+            if verbose:
+                print(' | '.join(f'{status}:{d_status[status]}' for status in d_status))
+            # check if all jobs finished
+            if d_status['COMPLETE'] == len(job_ids):
+                break
+            else:
+                time.sleep(time_interval)
 
 def main():
     import argparse

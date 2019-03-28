@@ -103,6 +103,7 @@ class FBTargetBuilder:
                 "program": "geometric",
                 "keywords": {
                     "coordsys": "tric",
+                    "enforce": 0.1,
                 }
             },
             "qc_spec": {
@@ -116,7 +117,8 @@ class FBTargetBuilder:
         }
         all_job_options = []
         # perturb the length of each bond by -30%, -20%, -10%, -5%, 5% ...
-        strech_steps = [-0.25, -0.2, -0.15, -0.1, -0.05, 0.0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3]
+        #strech_steps = [-0.25, -0.2, -0.15, -0.1, -0.05, 0.0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3]
+        strech_steps = [-0.2, -0.1, 0.0, 0.1, 0.2]
         for bond in self.m.bonds:
             job_option = copy.deepcopy(grid_opt_option_template)
             job_option['keywords']['scans'][0]['indices'] = list(bond)
@@ -135,13 +137,14 @@ class FBTargetBuilder:
                     "type": "angle",
                     "indices": None, # To be filled
                     "steps": None, # To be filled
-                    "step_type": "absolute"
+                    "step_type": "relative"
                 }]
             },
             "optimization_spec": {
                 "program": "geometric",
                 "keywords": {
                     "coordsys": "tric",
+                    "enforce": 0.1,
                 }
             },
             "qc_spec": {
@@ -154,8 +157,9 @@ class FBTargetBuilder:
             "initial_molecule": mol_id,
         }
         angles = self.m.find_angles()
-        # perturb the value of each angle by -30, -20, -10, 5, 10 ...
-        angle_bend_steps = [-30, -20, -10, 0, 10, 20, 30]
+        # perturb the value of each angle by  -20, -10, 5, 10 ...
+        angle_bend_steps = [-20, -10, 0, 10, 20]
+        #angle_bend_steps = [v/180*3.14159 for v in angle_bend_steps]
         all_job_options = []
         for angle in angles:
             job_option = copy.deepcopy(grid_opt_option_template)
@@ -198,7 +202,7 @@ class FBTargetBuilder:
                 #     if status == 'ERROR':
                 #         print(f"Error found in job {jid}")
                 #         qr = self.client.query_procedures({'id':jid})[0]
-                #         err = qr.get_error()
+                #         err = qr.gt_error()
                 #         if err is not None:
                 #             print("Error message:")
                 #             print(err.err_message)
@@ -213,12 +217,13 @@ class FBTargetBuilder:
                         print(err.err_message)
                 d_status[status] += 1
             if verbose:
-                print(' | '.join(f'{status}:{d_status[status]}' for status in d_status))
+                print(' | '.join(f'{status}:{d_status[status]}' for status in d_status), end='\r')
             # check if all jobs finished
             if d_status['COMPLETE'] == len(job_ids):
                 break
             else:
                 time.sleep(time_interval)
+        print()
 
 def main():
     import argparse

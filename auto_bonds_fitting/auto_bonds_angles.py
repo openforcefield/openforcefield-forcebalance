@@ -82,6 +82,7 @@ class FBTargetBuilder:
                 "program": "psi4"
             },
         }
+        print(f"Submitting 1 initial optimization job")
         mol_ret = self.client.add_molecules([self.qc_mol])
         r = self.client.add_procedure("optimization", "geometric", options, mol_ret)
         assert len(r.ids) == 1
@@ -179,13 +180,13 @@ class FBTargetBuilder:
 
     def get_optimized_molecule(self, job_id):
         # get the optimized molecule from a finished job
-        qr = self.client.query_procedures({'id':job_id})[0]
+        qr = self.client.query_procedures(id=job_id)[0]
         return qr.get_final_molecule()
 
     def get_grid_optimiztion_results(self, grid_opt_jobs):
         res = {}
-        for jid in grid_opt_jobs:
-            r = self.client.query_procedures({'id':jid})[0]
+        for job_id in grid_opt_jobs:
+            r = self.client.query_procedures(id=job_id)[0]
             # get final energies and geometries for each grid
         return res
 
@@ -194,20 +195,8 @@ class FBTargetBuilder:
     def wait_jobs(self, job_ids, time_interval=5, verbose=True):
         while True:
             d_status = collections.defaultdict(int)
-            for jid in job_ids:
-                # results = self.client.check_tasks({'id': jid})
-                # if results:
-                #     r = results[0]
-                #     status = r['STATUS']
-                #     if status == 'ERROR':
-                #         print(f"Error found in job {jid}")
-                #         qr = self.client.query_procedures({'id':jid})[0]
-                #         err = qr.gt_error()
-                #         if err is not None:
-                #             print("Error message:")
-                #             print(err.err_message)
-                #     d_status[status] += 1
-                r = self.client.query_procedures({'id':jid})[0]
+            for job_id in job_ids:
+                r = self.client.query_procedures(id=job_id)[0]
                 status = r.status.value # get string value from RecordStatusEnum
                 if r.status == 'ERROR':
                     print(f"Error found in job {jid}")

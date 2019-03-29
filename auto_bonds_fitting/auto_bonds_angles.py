@@ -4,6 +4,8 @@ import os
 import copy
 import time
 import collections
+import numpy as np
+
 from forcebalance.molecule import Molecule, Elements, bohr2ang
 import qcportal as ptl
 
@@ -13,7 +15,7 @@ class FBTargetBuilder:
         self.m = Molecule(mol2_file)
         self.qc_mol = self.fb_molecule_to_qc_molecule(self.m)
         self.client = ptl.FractalClient.from_file(conf_file)
-        self.out_folder = 'targets'
+        self.out_folder = os.path.realpath('targets')
         if os.path.exists('targets'):
             raise OSError("Folder targets/ already exist. Please delete the prevous one")
         os.mkdir(self.out_folder)
@@ -53,14 +55,16 @@ class FBTargetBuilder:
 
         # collect bond streching job data
         gresult = self.get_grid_optimiztion_results(grid_opt_jobs)
-        self.write_fb_target_abinitio(gresult)
+        # flatten the result dict into a list of {'energy': xxx, 'molecule': xxx} records
+        flat_records = [record for job_res in gresult.values() for record in job_res.values()]
+        self.write_fb_target_abinitio(flat_records)
 
 
         # wait for hessian job to finish
-        self.wait_jobs([hessian_job])
+        self.wait_jobs([hessian_job], jobtype='compute')
         # collect hessian job data
-        hresult = self.get_hessian_result(hessian_job)
-        self.write_fb_target_hessian(hresult)
+        hessian_result = self.get_hessian_result(hessian_job)
+        self.write_fb_target_hessian(hessian_result)
 
         # finish
 
@@ -92,7 +96,7 @@ class FBTargetBuilder:
         mol_id = self.client.add_molecules([self.qc_mol])[0]
         grid_opt_option_template = {
             "keywords": {
-                "preoptimization": True,
+                "preoptimization": False,
                 "scans": [{
                     "type": "distance",
                     "indices": None, # To be filled
@@ -133,7 +137,7 @@ class FBTargetBuilder:
         mol_id = self.client.add_molecules([self.qc_mol])[0]
         grid_opt_option_template = {
             "keywords": {
-                "preoptimization": True,
+                "preoptimization": False,
                 "scans": [{
                     "type": "angle",
                     "indices": None, # To be filled
@@ -172,11 +176,12 @@ class FBTargetBuilder:
         return r.ids
 
     def submit_vib_hessian_jobs(self):
-        #schema = {}
+        mol_id = self.client.add_molecules([self.qc_mol])[0]
         # submit a hessian job to the server
-        # job_id = self.client.add_procedule('hessian', schema, self.m)
-        # return job_id
-        return 1
+        r = self.client.add_compute("psi4", "HF", "sto-3g", "hessian", None, mol_id)
+        assert len(r.ids) == 1
+        return r.ids[0]
+
 
     def get_optimized_molecule(self, job_id):
         # get the optimized molecule from a finished job
@@ -184,19 +189,109 @@ class FBTargetBuilder:
         return qr.get_final_molecule()
 
     def get_grid_optimiztion_results(self, grid_opt_jobs):
+        """
+        Get results of a list of grid optimization jobs
+        Return a dictionary in this format:
+        {
+            grid_opt_job_1: {
+                grid_id_1: {
+                    'energy': -140.41241,
+                    'molecule': qcMol1,
+                },
+                grid_id_2: {
+                    'energy': -140.23241,
+                    'molecule': qcMol2,
+                }
+            },
+            grid_opt_job_2: { ... },
+            ...
+        }
+        """
         res = {}
         for job_id in grid_opt_jobs:
-            r = self.client.query_procedures(id=job_id)[0]
+            qr = self.client.query_procedures(id=job_id)[0]
+            assert qr.status == 'COMPLETE', f'Job {job_id} should be complete, but it is {qr.status.value}'
             # get final energies and geometries for each grid
+            energy_dict = qr.get_final_energies()
+            molecule_dict = qr.get_final_molecules()
+            assert set(energy_dict) == set(molecule_dict), "Keys of energy_dict and molecule_dict should be the same"
+            res[job_id] = {}
+            for key in energy_dict:
+                res[job_id][key] = {
+                    'energy': energy_dict[key],
+                    'molecule': molecule_dict[key],
+                }
         return res
 
+    def get_hessian_result(self, hessian_job_id):
+        """
+        Get the data from a hessian job
+        """
+        qr = self.client.query_results(id=hessian_job_id)[0]
+        hessian = np.array(qr.return_result, dtype=float)
+        # reshape hessian into a matrix, also check the dimensions
+        n_of_a = self.m.na
+        hessian = hessian.reshape(n_of_a*3, n_of_a*3)
+        # get the qcMol
+        qcmol = self.client.query_molecules(id=qr.molecule)[0]
+        # return a dictionary
+        return {'molecule': qcmol, 'hessian': hessian}
 
 
-    def wait_jobs(self, job_ids, time_interval=5, verbose=True):
+    def write_fb_target_abinitio(self, records):
+        """ Write a list of {'energy': xxx, 'molecule': xxx, 'name': xxx} records into a new target folder """
+        # prepare folder for writing
+        target_name = 'abinitio_bond_angles'
+        target_folder = os.path.join(self.out_folder, target_name)
+        os.mkdir(target_folder)
+        os.chdir(target_folder)
+        # load data into a fb Molecule
+        out_m = Molecule()
+        out_m.elem = self.m.elem.copy()
+        out_m.xyzs = []
+        out_m.qm_energies = []
+        out_m.comms = []
+        for record in records:
+            qcmol = record['molecule']
+            energy = record['energy']
+            name = record.get('name', 'created by FBTargetBuilder')
+            m = self.qc_molecule_to_fb_molecule(qcmol)
+            assert m.elem == out_m.elem, 'Elements list of resulting qcmol is not consistent with self.m'
+            # append geometry
+            out_m.xyzs.append(m.xyzs[0])
+            # append energy
+            out_m.qm_energies.append(energy)
+            # append name
+            out_m.comms.append(name)
+        # write output
+        print(f"Writing {len(records)} frames into targets/abinitio_bond_angles/traj.xyz")
+        out_m.write('traj.xyz')
+        print(f"Writing {len(records)} frames into targets/abinitio_bond_angles/qdata.txt")
+        out_m.write('qdata.txt')
+
+    def write_fb_target_hessian(self, record):
+        # prepare folder for writing
+        target_name = 'abinitio_hessian'
+        target_folder = os.path.join(self.out_folder, target_name)
+        os.mkdir(target_folder)
+        os.chdir(target_folder)
+        # load data into a fb Molecule
+        qcmol = record['molecule']
+        out_m = self.qc_molecule_to_fb_molecule(qcmol)
+        out_m.write('geo.xyz')
+        # write hessian matrix
+        hessian = record['hessian']
+        np.save('hessian', hessian)
+
+    def wait_jobs(self, job_ids, jobtype='procedure', time_interval=5, verbose=True):
+        assert jobtype in ['compute', 'procedure']
         while True:
             d_status = collections.defaultdict(int)
             for job_id in job_ids:
-                r = self.client.query_procedures(id=job_id)[0]
+                if jobtype == 'procedure':
+                    r = self.client.query_procedures(id=job_id)[0]
+                elif jobtype == 'compute':
+                    r = self.client.query_results(id=job_id)[0]
                 status = r.status.value # get string value from RecordStatusEnum
                 if r.status == 'ERROR':
                     print(f"Error found in job {jid}")
@@ -206,7 +301,7 @@ class FBTargetBuilder:
                         print(err.err_message)
                 d_status[status] += 1
             if verbose:
-                print(' | '.join(f'{status}:{d_status[status]}' for status in d_status), end='\r')
+                print(' | '.join(f'{status}:{d_status[status]}' for status in d_status))
             # check if all jobs finished
             if d_status['COMPLETE'] == len(job_ids):
                 break

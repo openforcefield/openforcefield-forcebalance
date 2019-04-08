@@ -4,6 +4,7 @@ import os
 import copy
 import time
 import collections
+import yaml
 import numpy as np
 
 from forcebalance.molecule import Molecule, Elements, bohr2ang
@@ -11,14 +12,54 @@ import qcportal as ptl
 
 
 class FBTargetBuilder:
-    def __init__(self, mol2_file, conf_file):
+
+
+    def __init__(self, mol2_file, client_conf_file, scan_conf_file=None):
         self.m = Molecule(mol2_file)
         self.qc_mol = self.fb_molecule_to_qc_molecule(self.m)
-        self.client = ptl.FractalClient.from_file(conf_file)
+        # create a client from config file
+        self.client = ptl.FractalClient.from_file(client_conf_file)
+        # load scan config from scan_conf_file
+        self.scan_conf = self.load_scan_conf(scan_conf_file)
+        # create output folder
         self.out_folder = os.path.realpath('targets')
         if os.path.exists('targets'):
             raise OSError("Folder targets/ already exist. Please delete the prevous one")
         os.mkdir(self.out_folder)
+
+    def load_scan_conf(self, filename=None):
+        """
+        Get the scan configuration from a yaml file
+
+        Parameters
+        ----------
+        filename: str or None
+        The input scan config filename (in yaml format). If None, default conf will be used.
+
+        Returns
+        -------
+        scan_conf: dict
+        """
+        default_scan_conf = {
+            'qm_method': 'HF',
+            'qm_basis': 'sto-3g',
+            'bond_steps': [-0.2, -0.1, 0.0, 0.1, 0.2],
+            'angle_steps': [-20, -10, 0, 10, 20],
+        }
+        if filename is None:
+            return copy.deepcopy(default_scan_conf)
+        with open(filename) as infile:
+            conf = yaml.load(infile)
+        # convert keys to lower case
+        conf = {k.lower():v for k,v in conf.items()}
+        # check redundant and missing keys
+        diff1 = default_scan_conf.keys() - conf.keys()
+        if diff1:
+            raise ValueError(f"Keys missing in scan_config file {filename}:\n {diff1}")
+        diff2 = conf.keys() - default_scan_conf.keys()
+        if diff2:
+            print(f"Warning: Keys in scan_config file {filename} are ignored:\n {diff2}")
+        return conf
 
     def fb_molecule_to_qc_molecule(self, fb_molecule):
         """ Convert an forcebalance.molecule.Molecule object to a qcportal.Molecule object"""
@@ -80,8 +121,8 @@ class FBTargetBuilder:
             "keywords": None,
             "qc_spec": {
                 "driver": "gradient",
-                "method": "HF",
-                "basis": "sto-3g",
+                "method": self.scan_conf['qm_method'],
+                "basis": self.scan_conf['qm_basis'],
                 "keywords": None,
                 "program": "psi4"
             },
@@ -113,21 +154,19 @@ class FBTargetBuilder:
             },
             "qc_spec": {
                 "driver": "gradient",
-                "method": "HF",
-                "basis": "sto-3g",
+                "method": self.scan_conf['qm_method'],
+                "basis": self.scan_conf['qm_basis'],
                 "keywords": None,
                 "program": "psi4",
             },
             "initial_molecule": mol_id,
         }
         all_job_options = []
-        # perturb the length of each bond by -30%, -20%, -10%, -5%, 5% ...
-        #strech_steps = [-0.25, -0.2, -0.15, -0.1, -0.05, 0.0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3]
-        strech_steps = [-0.2, -0.1, 0.0, 0.1, 0.2]
+        strech_steps = self.scan_conf['bond_steps']
         for bond in self.m.bonds:
             job_option = copy.deepcopy(grid_opt_option_template)
             job_option['keywords']['scans'][0]['indices'] = list(bond)
-            job_option['keywords']['scans'][0]['steps'] = strech_steps
+            job_option['keywords']['scans'][0]['steps'] = self.scan_conf['bond_steps']
             all_job_options.append(job_option)
         print(f"Submitting {len(all_job_options)} bond streching grid opt jobs")
         r = self.client.add_service(all_job_options)
@@ -162,14 +201,12 @@ class FBTargetBuilder:
             "initial_molecule": mol_id,
         }
         angles = self.m.find_angles()
-        # perturb the value of each angle by  -20, -10, 5, 10 ...
-        angle_bend_steps = [-20, -10, 0, 10, 20]
         #angle_bend_steps = [v/180*3.14159 for v in angle_bend_steps]
         all_job_options = []
         for angle in angles:
             job_option = copy.deepcopy(grid_opt_option_template)
             job_option['keywords']['scans'][0]['indices'] = list(angle)
-            job_option['keywords']['scans'][0]['steps'] = angle_bend_steps
+            job_option['keywords']['scans'][0]['steps'] = self.scan_conf['angle_steps']
             all_job_options.append(job_option)
         print(f"Submitting {len(all_job_options)} angle bending grid opt jobs")
         r = self.client.add_service(all_job_options)
@@ -178,7 +215,9 @@ class FBTargetBuilder:
     def submit_vib_hessian_jobs(self):
         mol_id = self.client.add_molecules([self.qc_mol])[0]
         # submit a hessian job to the server
-        r = self.client.add_compute("psi4", "HF", "sto-3g", "hessian", None, mol_id)
+        method = self.scan_conf['qm_method']
+        basis = self.scan_conf['qm_basis']
+        r = self.client.add_compute("psi4", method, basis, "hessian", None, mol_id)
         assert len(r.ids) == 1
         return r.ids[0]
 
@@ -313,10 +352,11 @@ def main():
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("infile", help='Input mol2 file for a single molecule')
-    parser.add_argument("-c", "--fractal_config", default='qcportal_config.yaml', help='File containing configuration of QCFractal Client')
+    parser.add_argument("-s", "--scan_config", help='File containing configuration of QM scans')
+    parser.add_argument("-c", "--client_config", default='qcportal_config.yaml', help='File containing configuration of QCFractal Client')
     args = parser.parse_args()
 
-    builder = FBTargetBuilder(args.infile, args.fractal_config)
+    builder = FBTargetBuilder(args.infile, args.client_config, scan_conf_file=args.scan_config)
     builder.master()
 
 if __name__ == '__main__':

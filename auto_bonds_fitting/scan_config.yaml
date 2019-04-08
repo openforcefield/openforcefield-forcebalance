@@ -1,0 +1,14 @@
+qm_method: HF
+qm_basis: sto-3g
+bond_steps:
+    - -0.2
+    - -0.1
+    - 0.0
+    - 0.1
+    - 0.2
+angle_steps:
+    - -20
+    - -10
+    - 0
+    - 10
+    - 20

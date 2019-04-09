@@ -193,8 +193,8 @@ class FBTargetBuilder:
             },
             "qc_spec": {
                 "driver": "gradient",
-                "method": "HF",
-                "basis": "sto-3g",
+                "method": self.scan_conf['qm_method'],
+                "basis": self.scan_conf['qm_basis'],
                 "keywords": None,
                 "program": "psi4",
             },

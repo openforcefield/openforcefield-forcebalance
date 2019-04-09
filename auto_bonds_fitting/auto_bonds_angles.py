@@ -255,7 +255,7 @@ class FBTargetBuilder:
             molecule_dict = qr.get_final_molecules()
             assert set(energy_dict) == set(molecule_dict), "Keys of energy_dict and molecule_dict should be the same"
             res[job_id] = {}
-            for key in energy_dict:
+            for key in sorted(energy_dict):
                 res[job_id][key] = {
                     'energy': energy_dict[key],
                     'molecule': molecule_dict[key],

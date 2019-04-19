@@ -129,7 +129,7 @@ class TorsionSubmitter:
         # store the state in checkpoint
         self.state[filename] = {}
         for dihedral, jobid in zip(dihedral_list, r.ids):
-            self.state[filename][tuple(dihedral)] = {'jobid': jobid, 'status': 'submitted'}
+            self.state[filename]['-'.join(dihedral)] = {'jobid': jobid, 'status': 'submitted'}
         self.write_checkpoint()
         return r.ids
 

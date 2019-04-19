@@ -108,6 +108,7 @@ class DihedralSelector:
     def find_atom_idxs_ring(self):
         """ Find rings in topology, return atom indices of each ring """
         distinct_rings = []
+        assert all(b0 < b1 for b0, b1 in self.m.bonds)
         paths = [[b0, b1] for b0, b1 in self.m.bonds]
         while len(paths) > 0:
             path = paths.pop()

@@ -1,9 +1,8 @@
 #!/usr/bin/env python
 
 import os
+import sys
 import copy
-import time
-import collections
 import yaml
 import json
 import numpy as np
@@ -18,12 +17,14 @@ class TorsionSubmitter:
         # load scan config from scan_conf_file
         self.scan_conf = self.load_scan_conf(scan_conf_file)
         # create a client from config file
-        self.client = ptl.FractalClient.from_file(client_conf_file)
+        self.client = ptl.FractalClient.from_file(client_conf_file) if client_conf_file is not None else None
         # load checkpoint file
         self.checkpoint_filename = "torsion_submit_checkpoint.json"
         self.load_checkpoint(self.checkpoint_filename)
         # sync scan config with checkpoint
         self.sync_scan_conf()
+        # hold all json option to submit
+        self.json_submit_options = []
 
     def load_checkpoint(self, filename):
         if os.path.isfile(filename):
@@ -55,7 +56,13 @@ class TorsionSubmitter:
             'energy_upper_limit': 0.05,
         }
         if filename is None:
-            return copy.deepcopy(default_scan_conf)
+            print("scan_configure file not provided, using default config")
+            fn = "td_scan_configure.yaml"
+            conf = copy.deepcopy(default_scan_conf)
+            with open(fn, 'w') as outfile:
+                yaml.dump(conf, outfile, default_flow_style=False)
+            print(f"scan configure saved as {fn}")
+            return conf
         with open(filename) as infile:
             conf = yaml.load(infile)
         # convert keys to lower case
@@ -93,12 +100,16 @@ class TorsionSubmitter:
         m.xyzs = [qc_molecule.geometry * bohr2ang]
         return m
 
-    def submit_molecule(self, filename):
+    def submit_molecule(self, filename, to_json=False):
+        print(f"\n*** Submitting torsion scans for {filename} ***")
         m = Molecule(filename)
         qc_mol = self.fb_molecule_to_qc_molecule(m)
-        mol_id = self.client.add_molecules([qc_mol])[0]
+        if to_json is False:
+            mol_id = self.client.add_molecules([qc_mol])[0]
+        else:
+            mol_id = qc_mol.json_dict()
         dihedral_selector = DihedralSelector(filename)
-        dihedral_list = dihedral_selector.find_dihedrals(filter=True)
+        dihedral_list = dihedral_selector.find_dihedrals(dihedral_filter='heavy_no_ring')
         all_job_options = []
         for dihedral in dihedral_list:
             torsiondrive_options = {
@@ -124,27 +135,42 @@ class TorsionSubmitter:
                 },
             }
             all_job_options.append(torsiondrive_options)
-        print(f"Submitting {len(all_job_options)} torsiondrive jobs")
-        r = self.client.add_service(all_job_options)
-        # store the state in checkpoint
-        self.state[filename] = {}
-        for dihedral, jobid in zip(dihedral_list, r.ids):
-            self.state[filename]['-'.join(dihedral)] = {'jobid': jobid, 'status': 'submitted'}
-        self.write_checkpoint()
-        return r.ids
+        if to_json is False:
+            print(f"Submitting {len(all_job_options)} torsiondrive jobs")
+            r = self.client.add_service(all_job_options)
+            # store the state in checkpoint
+            self.state[filename] = {}
+            for dihedral, jobid in zip(dihedral_list, r.ids):
+                self.state[filename]['-'.join(dihedral)] = {'jobid': jobid, 'status': 'submitted'}
+        else:
+            print(f"Saving {len(all_job_options)} torsiondrive options to json")
+            self.json_submit_options.extend(all_job_options)
+
+    def write_submitted_json(self, filename):
+        with open(filename, 'w') as outfile:
+            json.dump(self.json_submit_options, outfile, indent=2)
+            print(f'Total {len(self.json_submit_options)} torsiondrive options written to {filename}')
 
 def main():
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("infiles", nargs='*', help='Input mol2 file for a single molecule')
     parser.add_argument("-s", "--scan_config", help='File containing configuration of QM scans')
-    parser.add_argument("-c", "--client_config", default='qcportal_config.yaml', help='File containing configuration of QCFractal Client')
+    parser.add_argument("-c", "--client_config", help='File containing configuration of QCFractal Client')
+    parser.add_argument("-j", "--save_json", action="store_true", default=False, help='If specified, will not submit but save all submit job in a json.')
     args = parser.parse_args()
 
-    submitter = TorsionSubmitter(scan_conf_file=args.scan_config, client_conf_file=args.client_config)
+    print(' '.join(sys.argv))
 
+    submitter = TorsionSubmitter(scan_conf_file=args.scan_config, client_conf_file=args.client_config)
     for f in args.infiles:
-        submitter.submit_molecule(f)
+        submitter.submit_molecule(f, to_json=args.save_json)
+
+    if args.save_json:
+        submitter.write_submitted_json("submit_torsion_options.json")
+    else:
+        submitter.write_checkpoint()
+
 
 if __name__ == '__main__':
     main()

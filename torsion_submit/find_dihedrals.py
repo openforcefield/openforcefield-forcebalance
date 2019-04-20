@@ -2,12 +2,14 @@
 
 import json
 import collections
+
 from forcebalance.molecule import Molecule, Elements
+from bond_graph import BondGraph
 
 class DihedralSelector:
     def __init__(self, filename):
         self.m = Molecule(filename)
-        self.build_neighbor_list()
+        self.bond_graph = BondGraph(self.m.bonds)
 
     def build_neighbor_list(self):
         noa = self.m.na
@@ -20,29 +22,25 @@ class DihedralSelector:
             neighbors.sort()
         self.neighbor_list = neighbor_list
 
-    def find_dihedrals(self, dihedral_filter="equiv"):
-        """ find all dihedrals, filter out the ones with equivalent terminal atoms """
-        noa = self.m.na
-        # iterate over each bond, find distinct side atoms
-        # indices i-j-k-l
-        dihedral_list = []
-        for j in range(noa):
-            j_neighbors = self.neighbor_list[j]
-            if len(j_neighbors) < 2: continue
-            for k in j_neighbors:
-                if k <= j: continue
-                k_neighbors = self.neighbor_list[k]
-                for i in j_neighbors:
-                    if i == k: continue
-                    for l in k_neighbors:
-                        if l == j or l == i: continue
-                        dihedral_list.append([i,j,k,l])
+    def find_dihedrals(self, dihedral_filters=None):
+        """ Find all dihedrals, then apply filters """
+        # default empty filter
+        if dihedral_filters is None: dihedral_filters = []
+        # get the list of dihedrals
+        dihedral_list = self.bond_graph.get_dihedrals()
         print(f'Found total {len(dihedral_list)} distinct dihedrals')
-        if dihedral_filter == "equiv":
-            dihedral_list = self.filter_equivalent_terminals(dihedral_list)
-        elif dihedral_filter == "heavy_no_ring":
-            dihedral_list = self.filter_keep_4_heavy(dihedral_list)
-            dihedral_list = self.filter_remove_ring(dihedral_list)
+        # apply filters
+        available_filters = {
+            'equiv_terminal': self.filter_equivalent_terminals,
+            'heavy_atoms': self.filter_keep_4_heavy,
+            'no_ring': self.filter_remove_ring,
+            'unique_center_bond': self.filter_keep_unique_center
+        }
+        for filt_name in dihedral_filters:
+            if filt_name not in available_filters:
+                raise ValueError(f"Filter named {filt_name} not recognized, choices are {available_filters.keys()}")
+            filt = available_filters[filt_name]
+            dihedral_list = filt(dihedral_list)
         return dihedral_list
 
     def filter_equivalent_terminals(self, dihedral_list):
@@ -66,7 +64,7 @@ class DihedralSelector:
 
     def find_equivalent_terminal_atom_idxs(self):
         elem_list = self.m.elem
-        neighbor_list = self.neighbor_list
+        neighbor_list = self.bond_graph
         noa = self.m.na
         equal_atom_idxs = {i:{i} for i in range(noa)}
         for i in range(noa):
@@ -88,8 +86,8 @@ class DihedralSelector:
 
     def filter_remove_ring(self, dihedral_list):
         """ Filter dihedrals, remove any dihedral that's inside a ring """
-        rings = self.find_atom_idxs_ring()
-        print(f"Filter: Removing dihedrals that are containing in any of the rings {rings}")
+        rings = self.bond_graph.get_rings()
+        print(f"Filter: Removing dihedrals that the center bond is in any of the rings {rings}")
         # build a dictionary stores the index of ring each atom belongs to
         d_rings = collections.defaultdict(set)
         for i_ring, ring in enumerate(rings):
@@ -98,35 +96,83 @@ class DihedralSelector:
         # go over dihedrals and check if any four belong to the same ring
         filtered_dihedral_list = []
         for i, j, k, l in dihedral_list:
-            if d_rings[i] & d_rings[j] & d_rings[k] & d_rings[l]:
-                print(f"Dihedral {i}-{j}-{k}-{l} skipped because in the same ring")
+            if d_rings[j] & d_rings[k]:
+                print(f"Dihedral {i}-{j}-{k}-{l} skipped because bond {j}-{k} is in a ring")
             else:
                 filtered_dihedral_list.append([i,j,k,l])
         print(f"Number Left: {len(dihedral_list)} => {len(filtered_dihedral_list)}")
         return filtered_dihedral_list
 
-    def find_atom_idxs_ring(self):
-        """ Find rings in topology, return atom indices of each ring """
-        distinct_rings = []
-        assert all(b0 < b1 for b0, b1 in self.m.bonds)
-        paths = [[b0, b1] for b0, b1 in self.m.bonds]
-        while len(paths) > 0:
-            path = paths.pop()
-            origin = path[0]
-            last_idx = path[-1]
-            for neighbor in self.neighbor_list[last_idx]:
-                if neighbor in path:
-                    if neighbor == origin and len(path) > 1:
-                        # found a ring
-                        if path[1] < last_idx:
-                            # canonical ring index
-                            # 1-2-3 will be kept, 1-3-2 will be skipped
-                            distinct_rings.append(path)
-                elif neighbor > origin:
-                    # origin should be the smallest index in canonical ring
-                    new_path = path + [neighbor]
-                    paths.append(new_path)
-        return distinct_rings
+    def filter_keep_unique_center(self, dihedral_list):
+        """ Keep only one dihedral for each unique center bond """
+        print(f"Filter: Keep only one dihedral for each center bond")
+        filtered_dihedral_list = []
+        d_center_bond = collections.defaultdict(list)
+        for i,j,k,l in dihedral_list:
+            center_bond = (j,k) if j < k else (k,j)
+            if center_bond not in d_center_bond:
+                d_center_bond[center_bond].append([i,j,k,l])
+        for center_bond, dihedral_candidates in d_center_bond.items():
+            best_dihedral = self.find_best_dihedral_same_center_bond(dihedral_candidates)
+            print(f"best dihedral for center bond {center_bond}: {best_dihedral}")
+            filtered_dihedral_list.append(best_dihedral)
+        print(f"Number Left: {len(dihedral_list)} => {len(filtered_dihedral_list)}")
+        return filtered_dihedral_list
+
+    def find_best_dihedral_same_center_bond(self, dihedral_candidates):
+        """ Find the best dihedral among candidates with same center bond
+        Definition of best dihedral i-j-k-l: (From Lee-Ping)
+        Temporarily disconnect all i-j bonds, then check the total number of connected atoms for each i,
+        the atom i with the most connected wins
+        Same method applies to all candidates of l.
+        Return a single dihedral that is [best_i, j, k, best_l]
+        """
+        if len(dihedral_candidates) == 0: return
+        # check center bond are all the same
+        _, center_j, center_k, _ = next(iter(dihedral_candidates))
+        assert all(j==center_j and k==center_k for i,j,k,l in dihedral_candidates), "all candidates should share same center"
+        # build new bond graph with only heavy atoms
+        heavy_atom_bonds = [[b1, b2] for b1, b2 in self.m.bonds if self.m.elem[b1] != 'H' and self.m.elem[b2] != 'H']
+        # get a new bond graph with only heavy atoms
+        bond_graph = BondGraph(heavy_atom_bonds)
+        # find the best i among all candidates
+        i_candidates = {i for i,_,_,_ in dihedral_candidates}
+        if len(i_candidates) == 1:
+            best_i = i_candidates.pop()
+        else:
+            # temporarily remove all i-j bonds
+            for i in i_candidates:
+                bond_graph.remove_bond(i, center_j)
+            # compare i_candidates and find the one with most connected atom
+            max_connected = 0
+            best_i = None
+            for i in i_candidates:
+                # get all atoms connect to i in the temporary graph
+                n_connected_atoms = len(bond_graph.get_connected_nodes(i))
+                if n_connected_atoms > max_connected:
+                    max_connected = n_connected_atoms
+                    best_i = i
+            # add back all i-j bonds
+            for i in i_candidates:
+                bond_graph.add_bond(i, center_j)
+        # find the best_l among all candidates
+        l_candidates = {l for _,_,_,l in dihedral_candidates}
+        if len(l_candidates) == 1:
+            best_l = l_candidates.pop()
+        else:
+            # temporarily remove all i-j bonds
+            for l in l_candidates:
+                bond_graph.remove_bond(center_k, l)
+            # compare i_candidates and find the one with most connected atom
+            max_connected = 0
+            best_l = None
+            for l in l_candidates:
+                # get all atoms connect to i in the temporary graph
+                n_connected_atoms = len(bond_graph.get_connected_nodes(l))
+                if n_connected_atoms > max_connected:
+                    max_connected = n_connected_atoms
+                    best_l = l
+        return [best_i, center_j, center_k, best_l]
 
     def write_dihedrals(self, dihedral_list, filename):
         with open(filename, 'w') as outfile:

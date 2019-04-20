@@ -110,11 +110,11 @@ class DihedralSelector:
         d_center_bond = collections.defaultdict(list)
         for i,j,k,l in dihedral_list:
             center_bond = (j,k) if j < k else (k,j)
-            if center_bond not in d_center_bond:
-                d_center_bond[center_bond].append([i,j,k,l])
+            d_center_bond[center_bond].append([i,j,k,l])
         for center_bond, dihedral_candidates in d_center_bond.items():
+            print(f"best dihedral among {dihedral_candidates}:")
             best_dihedral = self.find_best_dihedral_same_center_bond(dihedral_candidates)
-            print(f"best dihedral for center bond {center_bond}: {best_dihedral}")
+            print(best_dihedral)
             filtered_dihedral_list.append(best_dihedral)
         print(f"Number Left: {len(dihedral_list)} => {len(filtered_dihedral_list)}")
         return filtered_dihedral_list
@@ -123,9 +123,9 @@ class DihedralSelector:
         """ Find the best dihedral among candidates with same center bond
         Definition of best dihedral i-j-k-l: (From Lee-Ping)
         Temporarily disconnect all i-j bonds, then check the total number of connected atoms for each i,
-        the atom i with the most connected wins
         Same method applies to all candidates of l.
-        Return a single dihedral that is [best_i, j, k, best_l]
+        The dihedral angle with the maximum connected_i + connected_j wins
+        Return a single dihedral as [i, j, k, l]
         """
         if len(dihedral_candidates) == 0: return
         # check center bond are all the same
@@ -137,42 +137,39 @@ class DihedralSelector:
         bond_graph = BondGraph(heavy_atom_bonds)
         # find the best i among all candidates
         i_candidates = {i for i,_,_,_ in dihedral_candidates}
+        # compute and store the number of connected atoms
+        n_connected_i = {}
         if len(i_candidates) == 1:
-            best_i = i_candidates.pop()
+            n_connected_i[i_candidates.pop()] = 0
         else:
             # temporarily remove all i-j bonds
             for i in i_candidates:
                 bond_graph.remove_bond(i, center_j)
             # compare i_candidates and find the one with most connected atom
-            max_connected = 0
-            best_i = None
             for i in i_candidates:
                 # get all atoms connect to i in the temporary graph
-                n_connected_atoms = len(bond_graph.get_connected_nodes(i))
-                if n_connected_atoms > max_connected:
-                    max_connected = n_connected_atoms
-                    best_i = i
+                n_connected_i[i] = len(bond_graph.get_connected_nodes(i))
+            print(f"n_connected for each i: {n_connected_i}")
             # add back all i-j bonds
             for i in i_candidates:
                 bond_graph.add_bond(i, center_j)
         # find the best_l among all candidates
         l_candidates = {l for _,_,_,l in dihedral_candidates}
+        n_connected_l = {}
         if len(l_candidates) == 1:
-            best_l = l_candidates.pop()
+            n_connected_l[l_candidates.pop()] = 0
         else:
             # temporarily remove all i-j bonds
             for l in l_candidates:
                 bond_graph.remove_bond(center_k, l)
             # compare i_candidates and find the one with most connected atom
-            max_connected = 0
-            best_l = None
             for l in l_candidates:
                 # get all atoms connect to i in the temporary graph
-                n_connected_atoms = len(bond_graph.get_connected_nodes(l))
-                if n_connected_atoms > max_connected:
-                    max_connected = n_connected_atoms
-                    best_l = l
-        return [best_i, center_j, center_k, best_l]
+                n_connected_l[l] = len(bond_graph.get_connected_nodes(l))
+            print(f"n_connected for each l: {n_connected_l}")
+        # get the best dihedral
+        best_dihedral = max(dihedral_candidates, key=lambda d: n_connected_i[d[0]] + n_connected_l[d[3]])
+        return best_dihedral
 
     def write_dihedrals(self, dihedral_list, filename):
         with open(filename, 'w') as outfile:

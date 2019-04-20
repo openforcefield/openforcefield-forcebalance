@@ -121,7 +121,8 @@ class TorsionSubmitter:
         else:
             mol_id = qc_mol.json_dict()
         dihedral_selector = DihedralSelector(filename)
-        dihedral_list = dihedral_selector.find_dihedrals(dihedral_filter='heavy_no_ring')
+        dihedral_filters = ['heavy_atoms', 'no_ring', 'unique_center_bond']
+        dihedral_list = dihedral_selector.find_dihedrals(dihedral_filters=dihedral_filters)
         all_job_options = []
         for dihedral in dihedral_list:
             torsiondrive_options = {
@@ -197,10 +198,10 @@ def main():
     for f in args.infiles:
         submitter.submit_molecule(f, to_json=args.save_json)
 
+    submitter.write_checkpoint()
+
     if args.save_json:
         submitter.write_submitted_json("submit_torsion_options.json")
-    else:
-        submitter.write_checkpoint()
 
 
 if __name__ == '__main__':

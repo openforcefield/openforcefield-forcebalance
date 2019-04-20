@@ -134,10 +134,10 @@ class BondGraph(object):
         result = set()
         new_connected = {node}
         while new_connected:
-            result += new_connected
+            result.update(new_connected)
             next_new = set()
             for new_node in new_connected:
                 # add new nodes to next new
-                next_new += (self._data[new_node] - result)
+                next_new.update(self._data[new_node] - result)
             new_connected = next_new
         return result

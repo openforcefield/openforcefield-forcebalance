@@ -91,11 +91,9 @@ class TorsionSubmitter:
 
     def fb_molecule_to_qc_molecule(self, fb_molecule):
         """ Convert an forcebalance.molecule.Molecule object to a qcportal.Molecule object"""
-        e_idxs = [Elements.index(i) for i in fb_molecule.elem]
-        coords = fb_molecule.xyzs[0]
         moldata = {
             'symbols': fb_molecule.elem,
-            'geometry': fb_molecule.xyzs[0],
+            'geometry': fb_molecule.xyzs[0] / bohr2ang,
             'molecular_charge': fb_molecule.Data.get('charge', 0.0),
             'molecular_multiplicity': fb_molecule.Data.get('mult', 1),
         }
@@ -136,6 +134,9 @@ class TorsionSubmitter:
                     "keywords": {
                         "coordsys": "tric",
                         "enforce": 0.1,
+                        "reset": True,
+                        "qccnv": True,
+                        "epsilon": 0.0,
                     }
                 },
                 "qc_spec": {
@@ -161,6 +162,7 @@ class TorsionSubmitter:
         self.state[filename] = {'charge': m.charge, 'dihedrals': {}}
         for i, dihedral in enumerate(dihedral_list):
             if to_json is False:
+                jobid = job_id_list[i]
                 dihedral_data = {'jobid': jobid, 'status': 'submitted'}
             else:
                 dihedral_data = {'status': 'saved_json'}

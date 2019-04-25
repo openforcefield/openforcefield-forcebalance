@@ -93,7 +93,8 @@ class TorsionMonitor:
 
     def get_xyz_str(self, qc_mol, title=''):
         elem_list = qc_mol.symbols
-        geo = qc_mol.geometry
+        # convert geometry unit Bohr -> Angstrom
+        geo = qc_mol.geometry * 0.529177
         noa = len(elem_list)
         lines = [f'{noa}',f'{title}']
         for e, (x,y,z) in zip(elem_list, geo):

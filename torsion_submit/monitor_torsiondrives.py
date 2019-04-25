@@ -63,7 +63,7 @@ class TorsionMonitor:
         d_complete_id_jobs = {job['id']:job for job in self.td_jobs if job['status'] == 'COMPLETE'}
         n = len(d_complete_id_jobs)
         print(f"Downloading results of {n} complete jobs")
-        for i, record in enumerate(self.client.query_procedures(id=list(d_complete_id_jobs))):
+        for i, record in enumerate(self.client.query_procedures(id=list(d_complete_id_jobs)), 1):
             job = d_complete_id_jobs[record.id]
             print(f"{i:>3d}/{n:<3d} Downloading results for job {job['name']}")
             # prepare folder
@@ -75,7 +75,8 @@ class TorsionMonitor:
             # write xyz file
             xyz_filename = os.path.join(folder, job['name'] + '.xyz')
             with open(xyz_filename, 'w') as xyzfile:
-                for grid_id, grid_mol in final_molecules.items():
+                for grid_id in sorted(final_molecules):
+                    grid_mol = final_molecules[grid_id]
                     energy = final_energy_dict[grid_id]
                     xyz_str = self.get_xyz_str(grid_mol, title = f"{job['name']} {grid_id} energy = {energy:15.7f}")
                     xyzfile.write(xyz_str + '\n')

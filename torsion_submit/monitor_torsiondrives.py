@@ -84,12 +84,12 @@ class TorsionMonitor:
         bins = np.arange(0, max_progress+bin_width, bin_width, dtype=int)
         histo_data, _ = np.histogram(progress_data, bins)
         print(f"{'Progress Range':^20s} {'N_jobs':>10s} {'Percentage':>15s}")
-        print('-' * 46)
+        print('-' * 50)
         for histo_n, bin_start in zip(histo_data, bins):
             bin_end = bin_start + bin_width - 1
             if bin_start == bins[-2]:
                 bin_end = bins[-1]
-            print(f"{bin_start:9d}--{bin_end:<9d} {histo_n:10d} {histo_n/n_total*100:14.2f}%")
+            print(f"{bin_start:9d}--{bin_end:<9d} {histo_n:10d} {histo_n/n_total*100:13.2f} %")
 
     def download_complete(self):
         if not os.path.exists(self.out_folder):

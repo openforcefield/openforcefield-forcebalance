@@ -5,8 +5,8 @@ import time
 import json
 from collections import Counter
 
-
 import qcfractal.interface as ptl
+import numpy as np
 
 class TorsionMonitor:
     def __init__(self, checkpoint_file, client_conf_file=None, out_folder='td_results'):
@@ -42,13 +42,31 @@ class TorsionMonitor:
         # check the out_folder for jobs that are downloaded already
         if os.path.exists(self.downloaded_json_fn):
             downloaded_jobs = json.load(open(self.downloaded_json_fn))
-            for job in downloaded_jobs:
+            for downloaded_job_dict in downloaded_jobs:
+                job_id = downloaded_job_dict['id']
+                job = d_id_jobs[job_id]
                 # update status to "DOWNLOADED"
-                d_id_jobs[job['id']]['status'] = "DOWNLOADED"
+                job['status'] = "DOWNLOADED"
+                # load progress number
+                job['progress'] = downloaded_job_dict['progress']
         # pull status from server for other jobs
         query_job_ids = [job['id'] for job in d_id_jobs.values() if job['status'] != 'DOWNLOADED']
         for record in self.client.query_procedures(id=query_job_ids):
-            d_id_jobs[record.id]['status'] = record.status.value
+            job = d_id_jobs[record.id]
+            job['status'] = record.status.value
+            # store the progress number, for example, complete jobs will be 24, incomplete will be 0
+            job['progress'] = len(record.optimization_history)
+        # pull status of "INCOMPLETE" jobs from services
+        incomplete_job_ids = [job['id'] for job in d_id_jobs.values() if job['status'] == 'INCOMPLETE']
+        td_projection = {'procedure_id': True, "status": True, "optimization_history":True}
+        for record_dict in self.client.query_services(procedure_id=incomplete_job_ids, projection=td_projection):
+            try:
+                job = d_id_jobs[record_dict['procedure_id']]
+                job['status'] = record_dict['status']
+                # The result showing here should have the correct number of filled grid points
+                job['progress'] = len(record_dict["optimization_history"])
+            except:
+                print(record_dict)
 
     def print_status(self):
         print('< Current Status >')
@@ -56,6 +74,22 @@ class TorsionMonitor:
         for status, n in Counter([j['status'] for j in self.td_jobs]).items():
             print(f"{status:>15s}: {n:<5d}", end='|')
         print()
+
+    def print_progress(self):
+        n_total = len(self.td_jobs)
+        print(f'< Progress of Total {n_total} Jobs >')
+        progress_data = np.array([j['progress'] for j in self.td_jobs])
+        max_progress = progress_data.max()
+        bin_width = max(max_progress // 6, 1)
+        bins = np.arange(0, max_progress+bin_width, bin_width, dtype=int)
+        histo_data, _ = np.histogram(progress_data, bins)
+        print(f"{'Progress Range':^20s} {'N_jobs':>10s} {'Percentage':>15s}")
+        print('-' * 46)
+        for histo_n, bin_start in zip(histo_data, bins):
+            bin_end = bin_start + bin_width - 1
+            if bin_start == bins[-2]:
+                bin_end = bins[-1]
+            print(f"{bin_start:9d}--{bin_end:<9d} {histo_n:10d} {histo_n/n_total*100:14.2f}%")
 
     def download_complete(self):
         if not os.path.exists(self.out_folder):
@@ -138,6 +172,8 @@ def main():
     monitor.get_update()
 
     monitor.print_status()
+
+    monitor.print_progress()
 
     monitor.download_complete()
 

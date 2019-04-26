@@ -58,15 +58,26 @@ class TorsionMonitor:
             job['progress'] = len(record.optimization_history)
         # pull status of "INCOMPLETE" jobs from services
         incomplete_job_ids = [job['id'] for job in d_id_jobs.values() if job['status'] == 'INCOMPLETE']
-        td_projection = {'procedure_id': True, "status": True, "optimization_history":True}
+        td_projection = {'procedure_id': True, "status": True, "optimization_history":True, "error": True}
         for record_dict in self.client.query_services(procedure_id=incomplete_job_ids, projection=td_projection):
             try:
                 job = d_id_jobs[record_dict['procedure_id']]
                 job['status'] = record_dict['status']
                 # The result showing here should have the correct number of filled grid points
                 job['progress'] = len(record_dict["optimization_history"])
+                # Record error
+                if job['status'] == 'ERROR':
+                    job['error'] = record_dict['error']
             except:
                 print(record_dict)
+
+    def log_error(self):
+        error_jobs = [job for job in self.td_jobs if job['status'] == 'ERROR']
+        if error_jobs:
+            error_filename = "monitor_error_jobs.json"
+            with open(error_filename, 'w') as jsonfile:
+                json.dump(error_jobs, jsonfile, indent=2)
+                print(f"Errors of {len(error_jobs)} jobs are recorded in {error_filename}")
 
     def print_status(self):
         print('< Current Status >')
@@ -170,6 +181,8 @@ def main():
     monitor = TorsionMonitor(checkpoint_file=args.checkpoint, client_conf_file=args.client_config)
 
     monitor.get_update()
+
+    monitor.log_error()
 
     monitor.print_status()
 

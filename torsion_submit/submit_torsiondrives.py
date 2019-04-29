@@ -108,7 +108,7 @@ class TorsionSubmitter:
         m.mult = qc_molecule.molecular_multiplicity
         return m
 
-    def submit_molecule(self, filename, to_json=False):
+    def submit_molecule(self, filename, dihedral_list=None, to_json=False):
         print(f"\n*** Submitting torsion scans for {filename} ***")
         m = Molecule(filename)
         # set charge by filename
@@ -118,9 +118,10 @@ class TorsionSubmitter:
             mol_id = self.client.add_molecules([qc_mol])[0]
         else:
             mol_id = qc_mol.json_dict()
-        dihedral_selector = DihedralSelector(filename)
-        dihedral_filters = ['heavy_atoms', 'no_ring', 'unique_center_bond']
-        dihedral_list = dihedral_selector.find_dihedrals(dihedral_filters=dihedral_filters)
+        if dihedral_list is None:
+            dihedral_selector = DihedralSelector(filename)
+            dihedral_filters = ['heavy_atoms', 'no_ring', 'unique_center_bond']
+            dihedral_list = dihedral_selector.find_dihedrals(dihedral_filters=dihedral_filters)
         all_job_options = []
         for dihedral in dihedral_list:
             torsiondrive_options = {

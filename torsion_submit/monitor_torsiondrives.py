@@ -4,9 +4,12 @@ import os
 import time
 import json
 from collections import Counter
+import numpy as np
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
 
 import qcfractal.interface as ptl
-import numpy as np
 
 class TorsionMonitor:
     def __init__(self, checkpoint_file, client_conf_file=None, out_folder='td_results'):
@@ -154,11 +157,9 @@ class TorsionMonitor:
         x_dihedrals = [gid[0] for gid in grid_ids]
         y_energies = [energy_dict[gid] for gid in grid_ids]
         # convert to relative energies in kcal/mol
-        import numpy as np
         y_energies = np.array(y_energies)
         y_energies = (y_energies - np.min(y_energies)) * 627.509
         # plot
-        import matplotlib.pyplot as plt
         plt.style.use('ggplot')
         plt.Figure()
         plt.plot(x_dihedrals, y_energies, '-o')

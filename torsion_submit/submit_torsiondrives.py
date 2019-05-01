@@ -7,7 +7,7 @@ import yaml
 import json
 import numpy as np
 
-from forcebalance.molecule import Molecule, Elements, bohr2ang
+from molecule import Molecule, Elements, bohr2ang
 import qcfractal.interface as ptl
 
 from find_dihedrals import DihedralSelector
@@ -91,11 +91,13 @@ class TorsionSubmitter:
 
     def fb_molecule_to_qc_molecule(self, fb_molecule):
         """ Convert an forcebalance.molecule.Molecule object to a qcportal.Molecule object"""
+        print("molecule_charge", fb_molecule.Data.get('molecule_charge', 0))
         moldata = {
             'symbols': fb_molecule.elem,
             'geometry': fb_molecule.xyzs[0] / bohr2ang,
-            'molecular_charge': fb_molecule.Data.get('charge', 0.0),
+            'molecular_charge': fb_molecule.Data.get('molecule_charge', 0),
             'molecular_multiplicity': fb_molecule.Data.get('mult', 1),
+            'connectivity': [list(bond) + [bond_order] for bond, bond_order in zip(fb_molecule.bonds, fb_molecule.bond_orders)],
         }
         return ptl.Molecule.from_data(moldata, dtype="dict", units="angstrom")
 
@@ -111,8 +113,6 @@ class TorsionSubmitter:
     def submit_molecule(self, filename, dihedral_list=None, to_json=False):
         print(f"\n*** Submitting torsion scans for {filename} ***")
         m = Molecule(filename)
-        # set charge by filename
-        m.charge = self.get_charge(filename)
         qc_mol = self.fb_molecule_to_qc_molecule(m)
         if to_json is False:
             mol_id = self.client.add_molecules([qc_mol])[0]
@@ -160,7 +160,7 @@ class TorsionSubmitter:
             print(f"Saving {len(all_job_options)} torsiondrive options to json")
             self.json_submit_options.extend(all_job_options)
         # store the state in checkpoint
-        self.state[filename] = {'charge': m.charge, 'dihedrals': {}}
+        self.state[filename] = {'dihedrals': {}}
         for i, dihedral in enumerate(dihedral_list):
             if to_json is False:
                 jobid = job_id_list[i]

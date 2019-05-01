@@ -3,7 +3,7 @@
 import json
 import collections
 
-from forcebalance.molecule import Molecule, Elements
+from molecule import Molecule, Elements
 from bond_graph import BondGraph
 
 class DihedralSelector:

@@ -28,7 +28,8 @@ if not os.path.isdir('xyz'):
     os.mkdir('xyz')
 for idx, mol in enumerate(mol_list, 1):
     formula = oechem.OEMolecularFormula(mol)
-    filename = f'{idx:03d}_{formula}.mol2'
+    #filename = f'{idx:03d}_{formula}.mol2'
+    filename = f'{idx:03d}_{formula}.sdf'
     print(f'Writing {filename}')
     ofs.open(filename)
     oechem.OEWriteMolecule(ofs, mol)

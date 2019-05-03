@@ -7,10 +7,11 @@ import yaml
 import json
 import numpy as np
 
-from molecule import Molecule, Elements, bohr2ang
+from forcebalance.molecule import Molecule, Elements, bohr2ang
 import qcfractal.interface as ptl
 
 from find_dihedrals import DihedralSelector
+from process_molecules import read_sdf_to_fb_mol, generate_torsion_index
 
 class TorsionSubmitter:
     def __init__(self, scan_conf_file=None, client_conf_file=None):
@@ -91,14 +92,19 @@ class TorsionSubmitter:
 
     def fb_molecule_to_qc_molecule(self, fb_molecule):
         """ Convert an forcebalance.molecule.Molecule object to a qcportal.Molecule object"""
-        print("molecule_charge", fb_molecule.Data.get('molecule_charge', 0))
         moldata = {
             'symbols': fb_molecule.elem,
             'geometry': fb_molecule.xyzs[0] / bohr2ang,
-            'molecular_charge': fb_molecule.Data.get('molecule_charge', 0),
+            'molecular_charge': fb_molecule.Data.get('molecular_charge', 0),
             'molecular_multiplicity': fb_molecule.Data.get('mult', 1),
             'connectivity': [list(bond) + [bond_order] for bond, bond_order in zip(fb_molecule.bonds, fb_molecule.bond_orders)],
         }
+        # append the cmiles_id as identifier
+        #cmiles_id = fb_molecule.Data.get('cmiles_id')
+        #if cmiles_id is not None:
+            #for discard_key in ['provenance', 'unique_protomer_representation', 'unique_tautomer_representation']:
+            #    cmiles_id.pop(discard_key, None)
+            #moldata['identifiers'] = cmiles_id
         return ptl.Molecule.from_data(moldata, dtype="dict", units="angstrom")
 
     def qc_molecule_to_fb_molecule(self, qc_molecule):
@@ -106,26 +112,29 @@ class TorsionSubmitter:
         m = Molecule()
         m.elem = [Elements[i] for i in qc_molecule.atomic_numbers]
         m.xyzs = [qc_molecule.geometry * bohr2ang]
-        m.charge = qc_molecule.molecular_charge
+        m.molecular_charge = qc_molecule.molecular_charge
         m.mult = qc_molecule.molecular_multiplicity
         return m
 
     def submit_molecule(self, filename, dihedral_list=None, to_json=False):
         print(f"\n*** Submitting torsion scans for {filename} ***")
-        m = Molecule(filename)
+        #m = Molecule(filename)
+        m = read_sdf_to_fb_mol(filename)
         qc_mol = self.fb_molecule_to_qc_molecule(m)
-        if to_json is False:
-            mol_id = self.client.add_molecules([qc_mol])[0]
-        else:
-            mol_id = qc_mol.json_dict()
+        cmiles_id = m.Data.get('cmiles_id', {})
+        # if to_json is False:
+        #     mol_id = self.client.add_molecules([qc_mol])[0]
+        # else:
+        #     mol_id = qc_mol.json_dict()
+        mol_json = qc_mol.json_dict()
         if dihedral_list is None:
-            dihedral_selector = DihedralSelector(filename)
+            dihedral_selector = DihedralSelector(m)
             dihedral_filters = ['heavy_atoms', 'no_ring', 'unique_center_bond']
             dihedral_list = dihedral_selector.find_dihedrals(dihedral_filters=dihedral_filters)
         all_job_options = []
         for dihedral in dihedral_list:
             torsiondrive_options = {
-                "initial_molecule": mol_id,
+                "initial_molecule": mol_json,
                 "keywords": {
                     "dihedrals": [dihedral],
                     "grid_spacing": [self.scan_conf['grid_spacing']],
@@ -150,6 +159,12 @@ class TorsionSubmitter:
             }
             if 'energy_upper_limit' in self.scan_conf:
                 torsiondrive_options['keywords']["energy_upper_limit"] = self.scan_conf['energy_upper_limit']
+            # add the additional label fields
+            if to_json:
+                torsiondrive_options["attributes"] = {
+                    'canonical_torsion_label': generate_torsion_index(m, dihedral),
+                    'cmiles_id': cmiles_id,
+                }
             all_job_options.append(torsiondrive_options)
         if to_json is False:
             print(f"Submitting {len(all_job_options)} torsiondrive jobs")
@@ -189,7 +204,7 @@ class TorsionSubmitter:
 def main():
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument("infiles", nargs='*', help='Input mol2 file for a single molecule')
+    parser.add_argument("infiles", nargs='*', help='Input sdf file for a single molecule')
     parser.add_argument("-s", "--scan_config", help='File containing configuration of QM scans')
     parser.add_argument("-c", "--client_config", help='File containing configuration of QCFractal Client')
     parser.add_argument("-j", "--save_json", action="store_true", default=False, help='If specified, will not submit but save all submit job in a json.')

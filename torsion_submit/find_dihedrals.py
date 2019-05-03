@@ -3,12 +3,12 @@
 import json
 import collections
 
-from molecule import Molecule, Elements
+from forcebalance.molecule import Molecule, Elements
 from bond_graph import BondGraph
 
 class DihedralSelector:
-    def __init__(self, filename):
-        self.m = Molecule(filename)
+    def __init__(self, molecule):
+        self.m = molecule
         self.bond_graph = BondGraph(self.m.bonds)
 
     def build_neighbor_list(self):
@@ -182,7 +182,8 @@ def main():
     parser.add_argument("-o", "--outfile", default='dihedral_list.json', help='Output json file containing definition of dihedrals')
     args = parser.parse_args()
 
-    selector = DihedralSelector(args.infile)
+    molecule = Molecule(args.infile)
+    selector = DihedralSelector(molecule)
     dihedral_list = selector.find_dihedrals()
     print(f"Found {len(dihedral_list)} dihedrals")
     for d in dihedral_list:

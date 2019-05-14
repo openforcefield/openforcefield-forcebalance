@@ -2,9 +2,10 @@
 Interface between ForceBalance and QCArchive
 
 ## Setup guide for a QCArchive local database
-references: 
-  https://qcfractal.readthedocs.io/en/latest/setup_server.html
-  https://github.com/MolSSI/QCFractal/tree/master/examples/local_dataset
+
+References: 
+- https://qcfractal.readthedocs.io/en/latest/setup_server.html
+- https://github.com/MolSSI/QCFractal/tree/master/examples/local_dataset
 
 1. Install anaconda
     - https://www.anaconda.com/download/#linux
@@ -24,6 +25,13 @@ references:
 4. Install ForceBalance
     ```
     conda install -c omnia forcebalance
+    ```
+
+5. Start a MongoDB instance
+    ```
+    MONGOPATH=/tmp/example
+    mkdir -p $MONGOPATH
+    mongod --dbpath $MONGOPATH
     ```
 
 5. Launch the QCFractal server with a local manager:

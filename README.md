@@ -2,73 +2,35 @@
 Interface between ForceBalance and QCArchive
 
 ## Setup guide for a QCArchive local database
-reference: https://github.com/MolSSI/QCFractal/tree/master/examples/local_dataset
+references: 
+  https://qcfractal.readthedocs.io/en/latest/setup_server.html
+  https://github.com/MolSSI/QCFractal/tree/master/examples/local_dataset
 
-1. Install MongoDB via Docker
-    - The clean and easy way to install MongoDB for testing is via Docker:
-        https://docs.docker.com/install/linux/docker-ce/ubuntu/#install-docker-ce
-
-    + Once installed, use command
-        ```
-        docker pull mongo
-        ```
-        to pull the official MongoDB image from DockerHub
-        Then run
-        ```
-        docker run -p 27017:27017 -d mongo
-        ```
-        to run the container in background with shared default port `27017`
-
-2. Install anaconda
+1. Install anaconda
     - https://www.anaconda.com/download/#linux
 
-
-3. clone the QCFractal git repository:
+2. Create a new conda environment and activate it
     ```
-    git clone https://github.com/MolSSI/QCFractal.git
-    ```
-
-4. create a new conda env for testing
-    ```
-    cd QCFractal
-    python devtools/scripts/conda_env.py -n=qcf -p=3.6 devtools/conda-envs/openff.yaml
-    ```
-
-5. Install QCFractal
-    ```
+    conda create -n qcf
     conda activate qcf
-    pip install -e .
     ```
 
-6. Install ForceBalance
+3. Install `qcfractal` and related packages for server
+    ```
+    conda install -c conda-forge qcfractal qcportal qcengine
+    conda install -c psi4 psi4>1.3.1 dftd3
+    ```
+
+4. Install ForceBalance
     ```
     conda install -c omnia forcebalance
     ```
 
-7. Launch the QCFractal server:
+5. Launch the QCFractal server with a local manager:
     ```
-    qcfractal-server qca_parsl_testing
-    ```
-
-8. In a new terminal window, launch the `parsl_manager`:
-    ```
-    conda activate qcf
-    cd QCFractal/examples/parsl_torsiondrive
-    python parsl_manager.py
+    qcfractal-server mydb --local-manager
     ```
 
-9. In a new terminal window, submit an example torsiondrive job:
-    ```
-    conda activate qcf
-    cd QCFractal/examples/parsl_torsiondrive
-    python compute_torsion.py
-    ```
-    The other terminal windows of `parsl_manager` and `qcfractal-server` should show status of the jobs running. The example job should finish fairly quick.
+To this point, a server is boot up and jobs can be submitted to it.
 
-10. After the job finishes, run the script to pull data from server and form a ForceBalance target:
-    ```
-    cd forcebalance-qcarchive/form_fb_target
-    python form_torsion_target.py
-    ```
-    A new folder `torsion_test/` should be created, that contains a `qdata.txt` file and an `.xyz` file for ForceBalance to read.
-
+Additional steps to build valence or torsiondrive datasets can be found in subfolders.

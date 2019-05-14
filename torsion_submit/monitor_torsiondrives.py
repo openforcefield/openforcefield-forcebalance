@@ -120,10 +120,17 @@ class TorsionMonitor:
             # get data
             final_energy_dict = record.get_final_energies()
             final_molecules = record.get_final_molecules()
+            # get final gradients from result records
+            final_result_records = record.get_final_results()
+            # print(final_energy_dict)
+            # print(final_molecules)
+            # print(final_result_records)
+            # sort the grid id list for writing into file
+            sorted_grid_ids = sorted(final_energy_dict)
             # write xyz file
             xyz_filename = os.path.join(folder, job['name'] + '.xyz')
             with open(xyz_filename, 'w') as xyzfile:
-                for grid_id in sorted(final_molecules):
+                for grid_id in sorted_grid_ids:
                     grid_mol = final_molecules[grid_id]
                     energy = final_energy_dict[grid_id]
                     xyz_str = self.get_xyz_str(grid_mol, title = f"{job['name']} {grid_id} energy = {energy:15.7f}")
@@ -131,6 +138,24 @@ class TorsionMonitor:
             # save energy curve plot as pdf
             plot_filename = os.path.join(folder, job['name'] + '.pdf')
             self.plot_1d_energies(final_energy_dict, plot_filename, title=job['name'])
+            # write gradients
+            grad_filename = os.path.join(folder, job['name'] + '.gradxyz')
+            with open(grad_filename, 'w') as gradxyzfile:
+                for grid_id in sorted_grid_ids:
+                    grad_result_dict = final_result_records[grid_id].dict()
+                    # assert it's a gradient job
+                    assert grad_result_dict['driver'].value == 'gradient', f"Wrong job type {grad_result_dict['driver'].value}, should be 'gradient'"
+                    grad_mat = np.array(grad_result_dict['return_result']).reshape(-1, 3)
+                    # get the elem list from the final molecule
+                    elem_list = final_molecules[grid_id].symbols
+                    # format the gradients as xyz format
+                    noa = len(grad_mat)
+                    title = f"Gradients for {job['name']} {grid_id} energy = {energy:15.7f}"
+                    gradxyz_str_lines = [f'{noa}',f'{title}']
+                    for e, (x,y,z) in zip(elem_list, grad_mat):
+                        gradxyz_str_lines.append(f'{e:7s} {x:13.5e} {y:13.5e} {z:13.5e}')
+                    # write to file
+                    gradxyzfile.write('\n'.join(gradxyz_str_lines) + '\n')
             # change status of job
             job['status'] = 'DOWNLOADED'
             job['saved_file'] = os.path.relpath(xyz_filename)

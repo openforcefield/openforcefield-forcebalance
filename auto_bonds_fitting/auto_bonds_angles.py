@@ -150,6 +150,9 @@ class FBTargetBuilder:
                 "keywords": {
                     "coordsys": "tric",
                     "enforce": 0.1,
+                    "reset": True,
+                    "qccnv": True,
+                    "epsilon": 0.0,
                 }
             },
             "qc_spec": {
@@ -189,6 +192,9 @@ class FBTargetBuilder:
                 "keywords": {
                     "coordsys": "tric",
                     "enforce": 0.1,
+                    "reset": True,
+                    "qccnv": True,
+                    "epsilon": 0.0,
                 }
             },
             "qc_spec": {
@@ -361,3 +367,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+

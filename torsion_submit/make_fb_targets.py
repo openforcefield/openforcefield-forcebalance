@@ -18,19 +18,18 @@ mol2 input.mol2
 pdb conf.pdb
 coords scan.xyz
 writelevel 1
+openmm_platform Reference
+remote 1
 $end
 '''
 
 def read_gradxyz(filename):
-    with open(filename) as infile:
-        lines = infile.readlines()
-    grads = []
-    for line in lines[2:]:
-        grads.append(line.split()[1:4])
-    return np.array(grads, dtype=float)
+    m = Molecule()
+    return m.read_xyz(filename)['xyzs']
 
 def make_fb_targets():
-    result_mol_folders = [os.path.join(results_folder, f) for f in os.path.listdir(results_folder) if os.path.isdir(f)]
+    result_mol_folders = [os.path.join(results_folder, f) for f in os.listdir(results_folder) if os.path.isdir(os.path.join(results_folder, f))]
+    result_mol_folders.sort()
     print(f"Loading data from {len(result_mol_folders)} result folders under {results_folder}")
     # output folder
     if os.path.exists(out_folder):
@@ -38,12 +37,13 @@ def make_fb_targets():
     os.mkdir(out_folder)
     target_names = []
     for mol_folder in result_mol_folders:
+        mol_name = os.path.basename(mol_folder)
         # the name of the molecules should be consistent with the mol_folder
-        mol_file = os.path.join(molecules_folder, mol_folder + '.mol2')
+        mol_file = os.path.join(molecules_folder, mol_name + '.mol2')
         molecule = Molecule(mol_file)
         # find all torsion data
         finished_scans = []
-        for f in os.path.listdir(mol_folder):
+        for f in os.listdir(mol_folder):
             name, ext = os.path.splitext(f)
             if ext == '.xyz':
                 finished_scans.append(name)
@@ -51,7 +51,7 @@ def make_fb_targets():
             print(f'No finished scans found in {mol_folder}')
             continue
         # output target name
-        target_name = 'td_' + mol_folder
+        target_name = 'td_' + mol_name
         target_names.append(target_name)
         # make target folder
         this_target_folder = os.path.join(out_folder, target_name)
@@ -67,20 +67,20 @@ def make_fb_targets():
             m = Molecule(xyz_file)
             target_mol.xyzs += m.xyzs
             # read energy from comment line
-            energy = float(m.comms[0].split()[-1])
-            target_mol.qm_energies.append(energy)
+            energies = [float(comm.split()[-1]) for comm in m.comms]
+            target_mol.qm_energies += energies
             # read gradient
             grad_file = os.path.join(mol_folder, f+'.gradxyz')
-            grad = read_gradxyz(grad_file)
-            target_mol.qm_grads.append(grad)
+            grads = read_gradxyz(grad_file)
+            target_mol.qm_grads += grads
         # write qdata.txt
         target_mol.write(os.path.join(this_target_folder, 'qdata.txt'))
         # write scan.xyz
         target_mol.write(os.path.join(this_target_folder, 'scan.xyz'))
         # write pdb
         molecule.write(os.path.join(this_target_folder, 'conf.pdb'))
-        # write mol2
-        molecule.write(os.path.join(this_target_folder, 'input.mol2'))
+        # copy mol2 file
+        shutil.copyfile(mol_file, os.path.join(this_target_folder, 'input.mol2'))
         # write a note
         with open(os.path.join(this_target_folder, 'notes.txt'), 'w') as fnote:
             fnote.write("Notes: This target is made by make_fb_targets.py, using data from\n")

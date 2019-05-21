@@ -55,6 +55,34 @@ class BondGraph(object):
                     frontier.append(path2)
         return None # path not found
 
+    def find_all_paths(self, node_list1, node_list2):
+        """ Find all possible paths from any node in node_list1 to node_list2
+        The resulting paths should not have duplicate nodes.
+        Also, the resulting paths should not have any node from node_list1 in the middle
+        """
+        assert all(node in self._data for node in node_list1), 'All nodes in node_list1 should be in this bond graph'
+        assert all(node in self._data for node in node_list2), 'All nodes in node_list2 should be in this bond graph'
+        set1 = set(node_list1)
+        set2 = set(node_list2)
+        frontier = [[node1] for node1 in node_list1]
+        res_paths = []
+        # the overlaps will be valid results
+        for node_overlap in set1 & set2:
+            res_paths.append([node_overlap])
+        # explore the graph to find all possible paths
+        while frontier:
+            path = frontier.pop()
+            last = path[-1]
+            for new in self._data[last]:
+                if new in set2:
+                    res_paths.append(path + [new])
+                elif new not in set1 and new not in path:
+                    path2 = path + [new]
+                    frontier.append(path2)
+        res_paths.sort(key=lambda x: (len(x), x))
+        return res_paths
+
+
     def cluster_nodes(self):
         """
         Put connected nodes in to clusters.

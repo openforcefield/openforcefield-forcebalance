@@ -41,6 +41,9 @@ def write_split_molecules_in_folder(mol_list, folder_name):
     xyz_folder = os.path.join(folder_name, 'xyz')
     if not os.path.isdir(xyz_folder):
         os.mkdir(xyz_folder)
+    mol2_folder = os.path.join(folder_name, 'mol2')
+    if not os.path.isdir(mol2_folder):
+        os.mkdir(mol2_folder)
     for idx, mol in enumerate(mol_list, 1):
         formula = oechem.OEMolecularFormula(mol)
         #filename = f'{idx:03d}_{formula}.mol2'
@@ -52,6 +55,11 @@ def write_split_molecules_in_folder(mol_list, folder_name):
         # write xyz files
         xyzfile = os.path.join(xyz_folder, f'{idx:03d}_{formula}.xyz')
         ofs.open(xyzfile)
+        oechem.OEWriteMolecule(ofs, mol)
+        ofs.close()
+        # write mol2 files
+        mol2file = os.path.join(mol2_folder, f'{idx:03d}_{formula}.mol2')
+        ofs.open(mol2file)
         oechem.OEWriteMolecule(ofs, mol)
         ofs.close()
 

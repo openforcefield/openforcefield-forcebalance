@@ -11,17 +11,6 @@ class DihedralSelector:
         self.m = molecule
         self.bond_graph = BondGraph(self.m.bonds)
 
-    def build_neighbor_list(self):
-        noa = self.m.na
-        bonds = self.m.bonds
-        neighbor_list = [[] for _ in range(noa)]
-        for b1, b2 in bonds:
-            neighbor_list[b1].append(b2)
-            neighbor_list[b2].append(b1)
-        for neighbors in neighbor_list:
-            neighbors.sort()
-        self.neighbor_list = neighbor_list
-
     def find_dihedrals(self, dihedral_filters=None):
         """ Find all dihedrals, then apply filters """
         # default empty filter

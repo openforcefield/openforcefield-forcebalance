@@ -1,5 +1,5 @@
-qm_method: HF
-qm_basis: sto-3g
+qm_method: b3lyp-d3bj
+qm_basis: dzvp
 bond_steps:
     - -0.3
     - -0.2

@@ -18,8 +18,8 @@ for f in sorted(os.listdir(mol_folder)):
         for r1, r2 in combinations(rsets, 2):
             # find all paths between the two rings
             all_paths = bg.find_all_paths(r1, r2)
-            # we want only one path, and the path has len > 2 (not direct connect)
-            if len(all_paths) == 1 and len(all_paths[0]) > 2:
+            # we want only one path, and the path has len == 3 (exactly one bridge atom)
+            if len(all_paths) == 1 and len(all_paths[0]) == 3:
                 #print(f'found ring-bridge molecule {f}')
                 mol_with_bridges.append(f)
                 break

@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 import os
 import sys
 import copy
@@ -12,6 +10,7 @@ import qcfractal.interface as ptl
 
 from find_dihedrals import DihedralSelector
 from process_molecules import read_sdf_to_fb_mol, generate_torsion_index
+
 
 class TorsionSubmitter:
     def __init__(self, scan_conf_file=None, client_conf_file=None):
@@ -116,6 +115,91 @@ class TorsionSubmitter:
         m.mult = qc_molecule.molecular_multiplicity
         return m
 
+    def make_submit_options(self, initial_molecule, dihedrals, to_json=False):
+        if isinstance(self.scan_conf['grid_spacing'], (list, tuple)):
+            grid_spacing = copy.deepcopy(self.scan_conf['grid_spacing'])
+        else:
+            grid_spacing = [self.scan_conf['grid_spacing']]
+        torsiondrive_options = {
+            "initial_molecule": initial_molecule,
+            "keywords": {
+                "dihedrals": dihedrals,
+                "grid_spacing": grid_spacing,
+            },
+            "optimization_spec": {
+                "program": "geometric",
+                "keywords": {
+                    "coordsys": "tric",
+                    "enforce": 0.1,
+                    "reset": True,
+                    "qccnv": True,
+                    "epsilon": 0.0,
+                }
+            },
+            "qc_spec": {
+                "driver": "gradient",
+                "method": self.scan_conf['qm_method'],
+                "basis": self.scan_conf['qm_basis'],
+                "keywords": None,
+                "program": "psi4",
+            },
+        }
+        if 'energy_upper_limit' in self.scan_conf:
+            torsiondrive_options['keywords']["energy_upper_limit"] = self.scan_conf['energy_upper_limit']
+        return torsiondrive_options
+
+    def submit_1d(self, filename, dihedral_list):
+        print(f"\n*** Submitting 1-D torsion scans for {filename} ***")
+        # read mol file and get cmiles id
+        m = read_sdf_to_fb_mol(filename)
+        qc_mol = self.fb_molecule_to_qc_molecule(m)
+        mol_id = self.client.add_molecules([qc_mol])[0]
+        # all options to be submitted
+        all_job_options = []
+        for dihedral in dihedral_list:
+            torsiondrive_submit_option = self.make_submit_options(mol_id, [dihedral])
+            all_job_options.append(torsiondrive_options)
+        print(f"Submitting {len(all_job_options)} torsiondrive jobs")
+        r = self.client.add_service(all_job_options)
+        job_id_list = r.ids
+        assert len(job_id_list) == len(dihedral_list)
+        # save in checkpoint
+        self.state[filename] = {'dihedrals': {}}
+        for i, dihedral in enumerate(dihedral_list):
+            dihedral_name = '-'.join(map(str, dihedral))
+            dihedral_data = {'jobid': job_id_list[i], 'status': 'submitted'}
+            self.state[filename]['dihedrals'][dihedral_name] = dihedral_data
+
+    def prepare_1d_json(self, filename, dihedral_list):
+        print(f"\n*** Preparing 1-D torsion scans as JSON for {filename} ***")
+        # read mol file and get cmiles id
+        m = read_sdf_to_fb_mol(filename)
+        qc_mol = self.fb_molecule_to_qc_molecule(m)
+        mol_json = qc_mol.json_dict()
+        cmiles_id = m.Data.get('cmiles_id', {})
+        # all options to be submitted
+        all_job_options = []
+        for dihedral in dihedral_list:
+            torsiondrive_submit_option = self.make_submit_options(mol_json, [dihedral])
+            # append the id information
+            torsiondrive_submit_option["attributes"] = {
+                'canonical_torsion_label': generate_torsion_index(m, dihedral),
+                'cmiles_id': cmiles_id,
+            }
+            all_job_options.append(torsiondrive_submit_option)
+        print(f"Saving {len(all_job_options)} torsiondrive options to json")
+        self.json_submit_options.extend(all_job_options)
+        # save in checkpoint
+        self.state[filename] = {'dihedrals': {}}
+        for dihedral in dihedral_list:
+            dihedral_name = '-'.join(map(str, dihedral))
+            dihedral_data = {'status': 'saved_json'}
+            self.state[filename]['dihedrals'][dihedral_name] = dihedral_data
+
+    def submit_2d(self, filename, dihedral_pairs_list, to_json=False):
+        print(f"\n*** Submitting 2-D torsion scans for {filename} ***")
+
+
     def submit_molecule(self, filename, dihedral_list=None, to_json=False):
         print(f"\n*** Submitting torsion scans for {filename} ***")
         #m = Molecule(filename)
@@ -133,38 +217,7 @@ class TorsionSubmitter:
             dihedral_list = dihedral_selector.find_dihedrals(dihedral_filters=dihedral_filters)
         all_job_options = []
         for dihedral in dihedral_list:
-            torsiondrive_options = {
-                "initial_molecule": mol_json,
-                "keywords": {
-                    "dihedrals": [dihedral],
-                    "grid_spacing": [self.scan_conf['grid_spacing']],
-                },
-                "optimization_spec": {
-                    "program": "geometric",
-                    "keywords": {
-                        "coordsys": "tric",
-                        "enforce": 0.1,
-                        "reset": True,
-                        "qccnv": True,
-                        "epsilon": 0.0,
-                    }
-                },
-                "qc_spec": {
-                    "driver": "gradient",
-                    "method": self.scan_conf['qm_method'],
-                    "basis": self.scan_conf['qm_basis'],
-                    "keywords": None,
-                    "program": "psi4",
-                },
-            }
-            if 'energy_upper_limit' in self.scan_conf:
-                torsiondrive_options['keywords']["energy_upper_limit"] = self.scan_conf['energy_upper_limit']
-            # add the additional label fields
-            if to_json:
-                torsiondrive_options["attributes"] = {
-                    'canonical_torsion_label': generate_torsion_index(m, dihedral),
-                    'cmiles_id': cmiles_id,
-                }
+            torsiondrive_options = self.make_submit_options(mol_json, [dihedral], to_json=to_json)
             all_job_options.append(torsiondrive_options)
         if to_json is False:
             print(f"Submitting {len(all_job_options)} torsiondrive jobs")
@@ -200,27 +253,3 @@ class TorsionSubmitter:
         with open(filename, 'w') as outfile:
             json.dump(self.json_submit_options, outfile, indent=2)
             print(f'Total {len(self.json_submit_options)} torsiondrive options written to {filename}')
-
-def main():
-    import argparse
-    parser = argparse.ArgumentParser()
-    parser.add_argument("infiles", nargs='*', help='Input sdf file for a single molecule')
-    parser.add_argument("-s", "--scan_config", help='File containing configuration of QM scans')
-    parser.add_argument("-c", "--client_config", help='File containing configuration of QCFractal Client')
-    parser.add_argument("-j", "--save_json", action="store_true", default=False, help='If specified, will not submit but save all submit job in a json.')
-    args = parser.parse_args()
-
-    print(' '.join(sys.argv))
-
-    submitter = TorsionSubmitter(scan_conf_file=args.scan_config, client_conf_file=args.client_config)
-    for f in args.infiles:
-        submitter.submit_molecule(f, to_json=args.save_json)
-
-    submitter.write_checkpoint()
-
-    if args.save_json:
-        submitter.write_submitted_json("submit_torsion_options.json")
-
-
-if __name__ == '__main__':
-    main()

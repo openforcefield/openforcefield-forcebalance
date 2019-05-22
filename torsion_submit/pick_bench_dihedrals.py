@@ -5,7 +5,7 @@ import sys
 import json
 
 from forcebalance.molecule import Molecule
-from submit_torsiondrives import TorsionSubmitter
+from torsion_submitter import TorsionSubmitter
 
 def read_pick_csv(filename):
     lines = open(filename).readlines()
@@ -37,7 +37,7 @@ def main():
 
     for f, dihedral in picked_data:
         print(f"Submitting {f} {dihedral}")
-        submitter.submit_molecule(f, dihedral_list=[dihedral], to_json=True)
+        submitter.prepare_1d_json(f, dihedral_list=[dihedral])
 
     submitter.write_submitted_json("picked_torsion_options.json")
 

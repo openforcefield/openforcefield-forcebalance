@@ -149,7 +149,6 @@ class TorsionSubmitter:
         return torsiondrive_options
 
     def submit_1d(self, filename, dihedral_list):
-        print(f"\n*** Submitting 1-D torsion scans for {filename} ***")
         # read mol file and get cmiles id
         m = read_sdf_to_fb_mol(filename)
         qc_mol = self.fb_molecule_to_qc_molecule(m)
@@ -171,7 +170,6 @@ class TorsionSubmitter:
             self.state[filename]['dihedrals'][dihedral_name] = dihedral_data
 
     def prepare_1d_json(self, filename, dihedral_list):
-        print(f"\n*** Preparing 1-D torsion scans as JSON for {filename} ***")
         # read mol file and get cmiles id
         m = read_sdf_to_fb_mol(filename)
         qc_mol = self.fb_molecule_to_qc_molecule(m)
@@ -196,46 +194,53 @@ class TorsionSubmitter:
             dihedral_data = {'status': 'saved_json'}
             self.state[filename]['dihedrals'][dihedral_name] = dihedral_data
 
-    def submit_2d(self, filename, dihedral_pairs_list, to_json=False):
-        print(f"\n*** Submitting 2-D torsion scans for {filename} ***")
-
-
-    def submit_molecule(self, filename, dihedral_list=None, to_json=False):
-        print(f"\n*** Submitting torsion scans for {filename} ***")
-        #m = Molecule(filename)
+    def submit_2d(self, filename, dihedral_pairs_list):
+        # read mol file and get cmiles id
         m = read_sdf_to_fb_mol(filename)
         qc_mol = self.fb_molecule_to_qc_molecule(m)
-        cmiles_id = m.Data.get('cmiles_id', {})
-        # if to_json is False:
-        #     mol_id = self.client.add_molecules([qc_mol])[0]
-        # else:
-        #     mol_id = qc_mol.json_dict()
-        mol_json = qc_mol.json_dict()
-        if dihedral_list is None:
-            dihedral_selector = DihedralSelector(m)
-            dihedral_filters = ['heavy_atoms', 'no_ring', 'unique_center_bond']
-            dihedral_list = dihedral_selector.find_dihedrals(dihedral_filters=dihedral_filters)
+        mol_id = self.client.add_molecules([qc_mol])[0]
+        # all options to be submitted
         all_job_options = []
-        for dihedral in dihedral_list:
-            torsiondrive_options = self.make_submit_options(mol_json, [dihedral], to_json=to_json)
+        for dihedral_pair in dihedral_pairs_list:
+            torsiondrive_submit_option = self.make_submit_options(mol_id, dihedral_pair)
             all_job_options.append(torsiondrive_options)
-        if to_json is False:
-            print(f"Submitting {len(all_job_options)} torsiondrive jobs")
-            r = self.client.add_service(all_job_options)
-            job_id_list = r.ids
-            assert len(job_id_list) == len(dihedral_list)
-        else:
-            print(f"Saving {len(all_job_options)} torsiondrive options to json")
-            self.json_submit_options.extend(all_job_options)
-        # store the state in checkpoint
+        print(f"Submitting {len(all_job_options)} torsiondrive jobs")
+        r = self.client.add_service(all_job_options)
+        job_id_list = r.ids
+        assert len(job_id_list) == len(dihedral_list)
+        # save in checkpoint
         self.state[filename] = {'dihedrals': {}}
-        for i, dihedral in enumerate(dihedral_list):
-            if to_json is False:
-                jobid = job_id_list[i]
-                dihedral_data = {'jobid': jobid, 'status': 'submitted'}
-            else:
-                dihedral_data = {'status': 'saved_json'}
-            dihedral_name = '-'.join(map(str, dihedral))
+        for i, dihedral_pair in enumerate(dihedral_pairs_list):
+            d1, d2 = dihedral_pair
+            dihedral_name = '-'.join(map(str, d1)) + '_' + '-'.join(map(str, d2))
+            dihedral_data = {'jobid': job_id_list[i], 'status': 'submitted'}
+            self.state[filename]['dihedrals'][dihedral_name] = dihedral_data
+
+    def prepare_2d_json(self, filename, dihedral_pairs_list):
+        # read mol file and get cmiles id
+        m = read_sdf_to_fb_mol(filename)
+        qc_mol = self.fb_molecule_to_qc_molecule(m)
+        mol_json = qc_mol.json_dict()
+        cmiles_id = m.Data.get('cmiles_id', {})
+        # all options to be submitted
+        all_job_options = []
+        for dihedral1, dihedral2 in dihedral_pairs_list:
+            torsiondrive_submit_option = self.make_submit_options(mol_json, [dihedral1, dihedral2])
+            # append the id information
+            canonical_torsion_label = generate_torsion_index(m, dihedral1) + ',' + generate_torsion_index(m, dihedral2)
+            torsiondrive_submit_option["attributes"] = {
+                'canonical_torsion_label': canonical_torsion_label,
+                'cmiles_id': cmiles_id,
+            }
+            all_job_options.append(torsiondrive_submit_option)
+        print(f"Saving {len(all_job_options)} torsiondrive options to json")
+        self.json_submit_options.extend(all_job_options)
+        # save in checkpoint
+        self.state[filename] = {'dihedrals': {}}
+        for dihedral_pair in dihedral_pairs_list:
+            d1, d2 = dihedral_pair
+            dihedral_name = '-'.join(map(str, d1)) + '_' + '-'.join(map(str, d2))
+            dihedral_data = {'status': 'saved_json'}
             self.state[filename]['dihedrals'][dihedral_name] = dihedral_data
 
     def get_charge(self, filename):

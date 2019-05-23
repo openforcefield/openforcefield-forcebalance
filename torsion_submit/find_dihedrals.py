@@ -2,6 +2,7 @@
 
 import json
 import collections
+from itertools import combinations
 
 from forcebalance.molecule import Molecule, Elements
 from bond_graph import BondGraph
@@ -163,6 +164,33 @@ class DihedralSelector:
     def write_dihedrals(self, dihedral_list, filename):
         with open(filename, 'w') as outfile:
             json.dump(dihedral_list, outfile, indent=2)
+
+    def find_dihedral_pairs(self, pattern='ring-a-ring'):
+        res = []
+        if pattern == 'ring-a-ring':
+            # Find all pairs of dihedrals that two center bonds are
+            # (ring-a)-ring and ring-(a-ring)
+            rings = self.bond_graph.get_rings()
+            if len(rings) >= 2:
+                rsets = [set(ring) for ring in rings]
+                for r1, r2 in combinations(rsets, 2):
+                    # find all paths between the two rings
+                    all_paths = self.bond_graph.find_all_paths(r1, r2)
+                    # we want only one path, and the path has len == 3 (exactly one bridge atom)
+                    if len(all_paths) != 1 or len(all_paths[0]) != 3: continue
+                    left, center, right = all_paths[0]
+                    print(f"Found ring-a-ring: {r1}-{center}-{r2}")
+                    # since both ends are rings, the (effective size)* of end groups are the same, randomly pick one
+                    left_neighbor = (self.bond_graph[left] & r1).pop()
+                    right_neighbor = (self.bond_graph[right] & r2).pop()
+                    # add dihedral pair to result list
+                    dihedral_pair = ((left_neighbor, left, center, right), (left, center, right, right_neighbor))
+                    print(dihedral_pair)
+                    res.append(dihedral_pair)
+        res.sort()
+        return res
+
+
 
 def main():
     import argparse

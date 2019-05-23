@@ -7,35 +7,32 @@ import yaml
 import json
 import numpy as np
 
-from forcebalance.molecule import Molecule, Elements, bohr2ang
-import qcfractal.interface as ptl
 
-from process_molecules import read_sdf_to_fb_mol, generate_torsion_index
+from process_molecules import read_sdf_to_fb_mol
 from find_dihedrals import DihedralSelector
 from torsion_submitter import TorsionSubmitter
 
 
-def get_group1_1d_dihedrals(filename):
+def get_group2_2d_dihedrals(filename):
     m = read_sdf_to_fb_mol(filename)
     dihedral_selector = DihedralSelector(m)
-    dihedral_filters = ['heavy_atoms', 'no_ring', 'unique_center_bond']
-    dihedral_list = dihedral_selector.find_dihedrals(dihedral_filters=dihedral_filters)
-    return dihedral_list
+    dihedral_pairs_list = dihedral_selector.find_dihedral_pairs(pattern='ring-a-ring')
+    return dihedral_pairs_list
 
-def submit_group1_1d(filenames, scan_conf_file, client_conf_file, to_json):
+def submit_group2_2d(filenames, scan_conf_file, client_conf_file, to_json):
     submitter = TorsionSubmitter(scan_conf_file=scan_conf_file, client_conf_file=client_conf_file)
     for f in filenames:
-        print(f"\n*** Submitting 1-D torsion scans for {f} ***")
-        dihedral_list = get_group1_1d_dihedrals(f)
-        submitter.submit_1d(f, dihedral_list)
+        print(f"\n*** Submitting 2-D torsion scans for {f} ***")
+        dihedral_pairs_list = get_group2_2d_dihedrals(f)
+        submitter.submit_2d(f, dihedral_pairs_list)
     submitter.write_checkpoint()
 
-def prepare_group1_1d_json(filenames, scan_conf_file, client_conf_file):
+def prepare_group2_2d_json(filenames, scan_conf_file, client_conf_file):
     submitter = TorsionSubmitter(scan_conf_file=scan_conf_file, client_conf_file=client_conf_file)
     for f in filenames:
-        print(f"\n*** Preparing 1-D torsion scans as JSON for {f} ***")
-        dihedral_list = get_group1_1d_dihedrals(f)
-        submitter.prepare_1d_json(f, dihedral_list)
+        print(f"\n*** Preparing 2-D torsion scans as JSON for {f} ***")
+        dihedral_pairs_list = get_group2_2d_dihedrals(f)
+        submitter.prepare_2d_json(f, dihedral_pairs_list)
     submitter.write_submitted_json("submit_torsion_options.json")
 
 
@@ -50,9 +47,9 @@ def main():
 
     print(' '.join(sys.argv))
     if args.save_json:
-        prepare_group1_1d_json(args.infiles, args.scan_config, args.client_config)
+        prepare_group2_2d_json(args.infiles, args.scan_config, args.client_config)
     else:
-        submit_group1_1d(args.infiles, args.scan_config, args.client_config)
+        submit_group2_2d(args.infiles, args.scan_config, args.client_config)
 
 if __name__ == '__main__':
     main()

@@ -8,9 +8,19 @@ from forcebalance.molecule import Molecule, Elements
 from bond_graph import BondGraph
 
 class DihedralSelector:
-    def __init__(self, molecule):
+    def __init__(self, molecule, skip_straight=True):
         self.m = molecule
         self.bond_graph = BondGraph(self.m.bonds)
+        self.avoid_angles_set = set()
+        if skip_straight:
+            self.avoid_angles_set = self.get_straight_angles()
+
+    def get_straight_angles(self, threshold=165.0):
+        straigt_angles = set()
+        for a in self.m.find_angles():
+            if m.measure_angles(*a) >= threshold:
+                straigt_angles.add(a)
+        return straigt_angles
 
     def find_dihedrals(self, dihedral_filters=None):
         """ Find all dihedrals, then apply filters """
@@ -19,6 +29,9 @@ class DihedralSelector:
         # get the list of dihedrals
         dihedral_list = self.bond_graph.get_dihedrals()
         print(f'Found total {len(dihedral_list)} distinct dihedrals')
+        if self.avoid_angles_set:
+            dihedral_list = [d for d in dihedral_list if d[:3] not in self.avoid_angles_set and d[1:] not in self.avoid_angles_set]
+            print(f'{len(dihedral_list)} dihedrals left after filter out straight angles')
         # apply filters
         available_filters = {
             'equiv_terminal': self.filter_equivalent_terminals,
@@ -185,7 +198,13 @@ class DihedralSelector:
                     right_neighbor = (self.bond_graph[right] & r2).pop()
                     # add dihedral pair to result list
                     dihedral_pair = ((left_neighbor, left, center, right), (left, center, right, right_neighbor))
-                    print(dihedral_pair)
+                    # filter out straight angles
+                    if self.avoid_angles_set:
+                        avoid_angles = {(left_neighbor, left, center), (left, center, right), (center, right, right_neighbor)} & self.avoid_angles_set
+                        if avoid_angles:
+                            print(f"{dihedral_pair} ignored because angle {avoid_angles} should be avoided")
+                            continue
+                    print(f"{dihedral_pair} added")
                     res.append(dihedral_pair)
         res.sort()
         return res

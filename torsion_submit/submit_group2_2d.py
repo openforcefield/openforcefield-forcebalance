@@ -33,6 +33,7 @@ def prepare_group2_2d_json(filenames, scan_conf_file):
         print(f"\n*** Preparing 2-D torsion scans as JSON for {f} ***")
         dihedral_pairs_list = get_group2_2d_dihedrals(f)
         submitter.prepare_2d_json(f, dihedral_pairs_list)
+    submitter.write_checkpoint()
     submitter.write_submitted_json("submit_torsion_options.json")
 
 

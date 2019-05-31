@@ -177,11 +177,14 @@ class TorsionSubmitter:
         cmiles_id = m.Data.get('cmiles_id', {})
         # all options to be submitted
         all_job_options = []
+        canonical_torsion_labels = []
         for dihedral in dihedral_list:
             torsiondrive_submit_option = self.make_submit_options(mol_json, [dihedral])
+            canonical_torsion_label = generate_torsion_index(m, dihedral)
+            canonical_torsion_labels.append(canonical_torsion_label)
             # append the id information
             torsiondrive_submit_option["attributes"] = {
-                'canonical_torsion_label': generate_torsion_index(m, dihedral),
+                'canonical_torsion_label': canonical_torsion_label,
                 'cmiles_id': cmiles_id,
             }
             all_job_options.append(torsiondrive_submit_option)
@@ -189,9 +192,9 @@ class TorsionSubmitter:
         self.json_submit_options.extend(all_job_options)
         # save in checkpoint
         self.state[filename] = {'dihedrals': {}}
-        for dihedral in dihedral_list:
+        for i, dihedral in enumerate(dihedral_list):
             dihedral_name = '-'.join(map(str, dihedral))
-            dihedral_data = {'status': 'saved_json'}
+            dihedral_data = {'status': 'saved_json', 'canonical_torsion_label': canonical_torsion_labels[i]}
             self.state[filename]['dihedrals'][dihedral_name] = dihedral_data
 
     def submit_2d(self, filename, dihedral_pairs_list):
@@ -224,10 +227,12 @@ class TorsionSubmitter:
         cmiles_id = m.Data.get('cmiles_id', {})
         # all options to be submitted
         all_job_options = []
+        canonical_torsion_labels = []
         for dihedral1, dihedral2 in dihedral_pairs_list:
             torsiondrive_submit_option = self.make_submit_options(mol_json, [dihedral1, dihedral2])
             # append the id information
             canonical_torsion_label = generate_torsion_index(m, dihedral1) + ',' + generate_torsion_index(m, dihedral2)
+            canonical_torsion_labels.append(canonical_torsion_label)
             torsiondrive_submit_option["attributes"] = {
                 'canonical_torsion_label': canonical_torsion_label,
                 'cmiles_id': cmiles_id,
@@ -240,7 +245,7 @@ class TorsionSubmitter:
         for dihedral_pair in dihedral_pairs_list:
             d1, d2 = dihedral_pair
             dihedral_name = '-'.join(map(str, d1)) + '_' + '-'.join(map(str, d2))
-            dihedral_data = {'status': 'saved_json'}
+            dihedral_data = {'status': 'saved_json', 'canonical_torsion_label': canonical_torsion_labels[i]}
             self.state[filename]['dihedrals'][dihedral_name] = dihedral_data
 
     def get_charge(self, filename):

@@ -17,7 +17,9 @@ type AbInitio_SMIRNOFF
 mol2 input.mol2
 pdb conf.pdb
 coords scan.xyz
-writelevel 1
+writelevel 2
+energy_rms_override 5.0
+force_rms_override 100.0
 openmm_platform Reference
 remote 1
 $end
@@ -30,7 +32,7 @@ def read_gradxyz(filename):
 def make_fb_targets():
     result_mol_folders = [os.path.join(results_folder, f) for f in os.listdir(results_folder) if os.path.isdir(os.path.join(results_folder, f))]
     result_mol_folders.sort()
-    print(f"Loading data from {len(result_mol_folders)} result folders under {results_folder}")
+    print(f"\nLoading data from {len(result_mol_folders)} result folders under {results_folder}")
     # output folder
     if os.path.exists(out_folder):
         shutil.rmtree(out_folder)

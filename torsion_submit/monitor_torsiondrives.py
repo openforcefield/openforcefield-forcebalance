@@ -27,17 +27,47 @@ class TorsionMonitor:
             mol_name = os.path.splitext(os.path.basename(fname))[0]
             dihedrals = state[fname]['dihedrals']
             for d in dihedrals:
-                job = {
+                job = dihedrals[d].copy()
+                job.update({
                     'name': mol_name + '_' + d,
                     'mol_name': mol_name,
                     'status': dihedrals[d]['status'],
                     'id': dihedrals[d].get('jobid'),
-                }
+                })
                 td_jobs.append(job)
         self.td_jobs = td_jobs
         if verbose:
             print(f'{len(td_jobs)} jobs found in {filename}')
             self.print_status()
+
+    def sync_from_dataset(self, dataset, spec='default'):
+        """
+        For jobs that are submitted as a "dataset", pull the status from server.
+
+        Parameters
+        ----------
+        dataset: str
+            name of the dataset on server, should have type "TorsionDriveDataset"
+
+        spec: str
+            The QM spec to pull data from. Default is "default"
+
+        Returns
+        -------
+        After this run, the self.td_jobs will be updated with job ids and status
+        """
+        print(f"Loading job status from dataset {dataset} [{spec}] on server")
+        ds = self.client.get_collection("TorsionDriveDataset", "OpenFF Group1 Torsions")
+        ds_status = ds.status([spec])
+        print(f"Dataset status:\n{ds_status}")
+        data_dict = ds.df.to_dict()['default']
+        for job in self.td_jobs:
+            if 'canonical_torsion_label' in job:
+                label = job['canonical_torsion_label']
+                if label in data_dict:
+                    record = data_dict[label]
+                    job['id'] = record.id
+                    job['status'] = record.status.value
 
     def get_update(self):
         d_id_jobs = {job['id']: job for job in self.td_jobs if job['id']}
@@ -47,11 +77,12 @@ class TorsionMonitor:
             downloaded_jobs = json.load(open(self.downloaded_json_fn))
             for downloaded_job_dict in downloaded_jobs:
                 job_id = downloaded_job_dict['id']
-                job = d_id_jobs[job_id]
-                # update status to "DOWNLOADED"
-                job['status'] = "DOWNLOADED"
-                # load progress number
-                job['progress'] = downloaded_job_dict['progress']
+                if job_id in d_id_jobs:
+                    job = d_id_jobs[job_id]
+                    # update status to "DOWNLOADED"
+                    job['status'] = "DOWNLOADED"
+                    # load progress number
+                    job['progress'] = downloaded_job_dict['progress']
         # pull status from server for other jobs
         query_job_ids = [job['id'] for job in d_id_jobs.values() if job['status'] != 'DOWNLOADED']
         for record in self.client.query_procedures(id=query_job_ids):
@@ -193,8 +224,6 @@ class TorsionMonitor:
         plt.title(title)
         plt.savefig(filename)
         plt.close()
-
-
 
 
 def main():

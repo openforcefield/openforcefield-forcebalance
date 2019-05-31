@@ -36,6 +36,7 @@ def prepare_group1_1d_json(filenames, scan_conf_file):
         print(f"\n*** Preparing 1-D torsion scans as JSON for {f} ***")
         dihedral_list = get_group1_1d_dihedrals(f)
         submitter.prepare_1d_json(f, dihedral_list)
+    submitter.write_checkpoint()
     submitter.write_submitted_json("submit_torsion_options.json")
 
 

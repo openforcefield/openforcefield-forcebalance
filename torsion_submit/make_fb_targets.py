@@ -18,7 +18,9 @@ mol2 input.mol2
 pdb conf.pdb
 coords scan.xyz
 writelevel 2
-energy_rms_override 5.0
+attenuate
+energy_denom 2.0
+energy_upper 10.0
 force_rms_override 100.0
 openmm_platform Reference
 remote 1

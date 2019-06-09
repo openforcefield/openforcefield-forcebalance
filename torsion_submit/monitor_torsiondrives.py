@@ -93,7 +93,13 @@ class TorsionMonitor:
         # pull status of "INCOMPLETE" jobs from services
         incomplete_job_ids = [job['id'] for job in d_id_jobs.values() if job['status'] == 'INCOMPLETE']
         td_projection = {'procedure_id': True, "status": True, "optimization_history":True, "error": True}
-        for record_dict in self.client.query_services(procedure_id=incomplete_job_ids, projection=td_projection):
+        try:
+            record_list = self.client.query_services(procedure_id=incomplete_job_ids, projection=td_projection)
+        except IOError as e:
+            print("Not able to pull information of INCOMPLETE jobs. Error:")
+            print(e)
+            record_list = []
+        for record_dict in record_list:
             try:
                 job = d_id_jobs[record_dict['procedure_id']]
                 job['status'] = record_dict['status']

@@ -7,4 +7,6 @@ monitor.sync_from_dataset("OpenFF Group1 Torsions", "default")
 
 monitor.get_update()
 
+monitor.print_status()
+
 monitor.download_complete()

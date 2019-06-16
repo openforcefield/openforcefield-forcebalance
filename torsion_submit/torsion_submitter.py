@@ -67,7 +67,7 @@ class TorsionSubmitter:
             print(f"scan configure saved as {fn}")
             return conf
         with open(filename) as infile:
-            conf = yaml.load(infile)
+            conf = yaml.load(infile, Loader=yaml.SafeLoader)
         # convert keys to lower case
         conf = {k.lower():v for k,v in conf.items()}
         # check redundant and missing keys

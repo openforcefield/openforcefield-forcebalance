@@ -107,7 +107,7 @@ class BondGraph(object):
     def get_dihedrals(self):
         """
         Iterate over each bond, find distinct side atoms
-        Return a list of distinct dihedral angles [[i,j,k,l], ..]
+        Return a list of distinct dihedral angles [(i,j,k,l), ..]
         """
         # indices i-j-k-l
         dihedral_list = []
@@ -121,7 +121,7 @@ class BondGraph(object):
                     if i == k: continue
                     for l in k_neighbors:
                         if l == j or l == i: continue
-                        dihedral_list.append([i,j,k,l])
+                        dihedral_list.append((i,j,k,l))
         return dihedral_list
 
     def get_rings(self):

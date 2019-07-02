@@ -30,12 +30,13 @@ def submit_group1_1d(filenames, scan_conf_file, client_conf_file, to_json):
         submitter.submit_1d(f, dihedral_list)
     submitter.write_checkpoint()
 
-def prepare_group1_1d_json(filenames, scan_conf_file, client_conf_file):
-    submitter = TorsionSubmitter(scan_conf_file=scan_conf_file, client_conf_file=client_conf_file)
+def prepare_group1_1d_json(filenames, scan_conf_file):
+    submitter = TorsionSubmitter(scan_conf_file=scan_conf_file)
     for f in filenames:
         print(f"\n*** Preparing 1-D torsion scans as JSON for {f} ***")
         dihedral_list = get_group1_1d_dihedrals(f)
         submitter.prepare_1d_json(f, dihedral_list)
+    submitter.write_checkpoint()
     submitter.write_submitted_json("submit_torsion_options.json")
 
 
@@ -50,7 +51,7 @@ def main():
 
     print(' '.join(sys.argv))
     if args.save_json:
-        prepare_group1_1d_json(args.infiles, args.scan_config, args.client_config)
+        prepare_group1_1d_json(args.infiles, args.scan_config)
     else:
         submit_group1_1d(args.infiles, args.scan_config, args.client_config)
 

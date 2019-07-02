@@ -16,11 +16,13 @@ class DihedralSelector:
             self.avoid_angles_set = self.get_straight_angles()
 
     def get_straight_angles(self, threshold=165.0):
-        straigt_angles = set()
+        straight_angles = set()
+        self.m.build_topology(force_bonds=False)
         for a in self.m.find_angles():
-            if m.measure_angles(*a) >= threshold:
-                straigt_angles.add(a)
-        return straigt_angles
+            if self.m.measure_angles(*a)[0] >= threshold:
+                straight_angles.add(a)
+                straight_angles.add(a[::-1])
+        return straight_angles
 
     def find_dihedrals(self, dihedral_filters=None):
         """ Find all dihedrals, then apply filters """

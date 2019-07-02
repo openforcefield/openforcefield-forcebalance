@@ -27,12 +27,13 @@ def submit_group2_2d(filenames, scan_conf_file, client_conf_file, to_json):
         submitter.submit_2d(f, dihedral_pairs_list)
     submitter.write_checkpoint()
 
-def prepare_group2_2d_json(filenames, scan_conf_file, client_conf_file):
-    submitter = TorsionSubmitter(scan_conf_file=scan_conf_file, client_conf_file=client_conf_file)
+def prepare_group2_2d_json(filenames, scan_conf_file):
+    submitter = TorsionSubmitter(scan_conf_file=scan_conf_file)
     for f in filenames:
         print(f"\n*** Preparing 2-D torsion scans as JSON for {f} ***")
         dihedral_pairs_list = get_group2_2d_dihedrals(f)
         submitter.prepare_2d_json(f, dihedral_pairs_list)
+    submitter.write_checkpoint()
     submitter.write_submitted_json("submit_torsion_options.json")
 
 
@@ -47,7 +48,7 @@ def main():
 
     print(' '.join(sys.argv))
     if args.save_json:
-        prepare_group2_2d_json(args.infiles, args.scan_config, args.client_config)
+        prepare_group2_2d_json(args.infiles, args.scan_config)
     else:
         submit_group2_2d(args.infiles, args.scan_config, args.client_config)
 

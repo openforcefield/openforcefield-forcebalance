@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import os
+import shutil
 import cmiles
 from openeye import oechem
 import qcportal as ptl
@@ -14,12 +15,12 @@ global_opts = """
 $global
 bond_denom 0.01
 angle_denom 0.03
-dihedral_denom 0.2
+dihedral_denom 0.5
 improper_denom 0.2
 $end
 """
 
-target_template = """
+system_template = """
 $system
 name {name}
 geometry {name}.xyz
@@ -34,6 +35,7 @@ name {name}
 type OptGeoTarget_SMIRNOFF
 weight 1.0
 writelevel 1
+remote 1
 $end
 """
 
@@ -74,7 +76,7 @@ def get_int_fmt_string(n):
         count += 1
     return f"{{:0{count}d}}"
 
-def write_molecule_files(molecule, name):
+def write_molecule_files(molecule, name, test_ff=None):
     qcjson_mol = molecule.json_dict()
     oemol = cmiles.utils.load_molecule(qcjson_mol)
     # write the mol2 file and xyz file
@@ -82,20 +84,85 @@ def write_molecule_files(molecule, name):
         ofs.open(f'{name}.{ext}')
         oechem.OEWriteMolecule(ofs, oemol)
         ofs.close()
-    # use ForceBalance Molecule to generate pdb file
-    # because the oechem.OEWriteMolecule will mess up with atom indices
-    fbmol = Molecule(f'{name}.mol2')
-    fbmol.write(f'{name}.pdb')
+    success = True
+    err_msg = ""
+    if test_ff != None:
+        from openforcefield.topology import Molecule as Off_Molecule
+        from openforcefield.topology import Topology as Off_Topology
+        try:
+            off_molecule = Off_Molecule.from_file(f'{name}.mol2', allow_undefined_stereo=True)
+            off_topology = Off_Topology.from_molecules(off_molecule)
+            test_ff.create_openmm_system(off_topology)
+        except Exception as e:
+            success = False
+            err_msg = e.args[0]
+    if success == True:
+        # use ForceBalance Molecule to generate pdb file
+        # because the oechem.OEWriteMolecule will mess up with atom indices
+        fbmol = Molecule(f'{name}.mol2')
+        fbmol.write(f'{name}.pdb')
+    else:
+        if not os.path.exists('../error_mol2s'):
+            os.mkdir('../error_mol2s')
+        shutil.move(f'{name}.mol2', f'../error_mol2s/{name}.mol2')
+        os.remove(f'{name}.xyz')
+    return success, err_msg
 
 
-def make_optgeo_target(dataset_name):
+def make_optgeo_target(dataset_name, size=None, test_ff_fnm=None):
     final_molecules = load_final_molecules(dataset_name)
-    # get into targets folder
+    # create the ff for testing
+    if test_ff_fnm != None:
+        from openforcefield.typing.engines.smirnoff import ForceField
+        test_ff = ForceField(test_ff_fnm)
+    else:
+        test_ff = None
+    n_molecules = len(final_molecules)
+    if n_molecules == 0:
+        print("No molecules found")
+        return
+    # create and cd into targets folder
     if not os.path.exists('targets'):
         os.mkdir('targets')
     os.chdir('targets')
+    if size is None or n_molecules <= size:
+        # put all molecules into one target
+        target_name = 'optgeo_' + dataset_name.replace(' ', '_')
+        n_success = create_target(target_name, final_molecules)
+        target_names = [target_name]
+    else:
+        assert size > 0 and isinstance(size, int), 'size should be positive int'
+        n_groups = (n_molecules + size - 1) // size
+        # put molecules into separate targets
+        all_molelcule_idxs = list(final_molecules.keys())
+        target_names = []
+        idx_fmt_string = get_int_fmt_string(n_groups)
+        n_success = 0
+        for i_g in range(n_groups):
+            group_molecule_idxs = all_molelcule_idxs[i_g*size : (i_g+1)*size]
+            molecules_data = {m_index: final_molecules[m_index] for m_index in group_molecule_idxs}
+            target_name = 'optgeo_' + dataset_name.replace(' ', '_') + '-' + idx_fmt_string.format(i_g)
+            this_n_success = create_target(target_name, molecules_data, test_ff=test_ff, start_idx=i_g*size)
+            if this_n_success > 0:
+                target_names.append(target_name)
+                n_success += this_n_success
+    print(f"Successfully created targets with total {n_success} molecules")
+    # write a targets.in file
+    target_in_fnm = f"targets.in.{dataset_name.replace(' ', '_')}"
+    with open(target_in_fnm, 'w') as outfile:
+        for target_name in target_names:
+            outfile.write(target_opts.format(name=target_name))
+    os.chdir('..')
+    print(f"Targets generation finished!")
+    print(f"You can copy contents in {os.path.join('targets', target_in_fnm)} to your ForceBalance input file.")
+
+
+def create_target(target_name, moledules_data, test_ff=None, start_idx=0):
+    """ generate a single target folder with data provided
+    moledules_data: [str: ] = {molecule_index : Molecule}
+    """
+    if len(moledules_data) == 0: return
     # prepare output optget target folder
-    target_name = 'optgeo_' + dataset_name.replace(' ', '_')
     target_folder = os.path.join(target_name)
     if not os.path.exists(target_folder):
         os.mkdir(target_folder)
@@ -104,43 +171,40 @@ def make_optgeo_target(dataset_name):
     # write notes
     fnotes = open('notes.txt', 'w')
     fnotes.write("Prepared by make_fb_optgeo_target.py\n")
-    fnotes.write(f"Data loaded from {dataset_name}\n")
+    n_success = 0
     with open("optgeo_options.txt", "w") as optfile:
         optfile.write(global_opts)
-        target_index = 0
+        target_index = start_idx
         # index format with correct number of leading 0s
-        idx_fmt_string = get_int_fmt_string(len(final_molecules))
-        for m_index, molecule in final_molecules.items():
+        idx_fmt_string = get_int_fmt_string(len(moledules_data))
+        for m_index, molecule in moledules_data.items():
             idx_str = idx_fmt_string.format(target_index)
             name = f"{idx_str}_{molecule.name}"
-            # if molecule.molecular_charge != 0:
-            #     fnotes.write(f'{name} : {m_index} skipped - charge {molecule.molecular_charge}\n')
-            #     continue
             # write molecule files
-            write_molecule_files(molecule, name)
-            # write $system block in optgeo_options.txt
-            optfile.write(target_template.format(name=name))
-            # write the original m_index
-            fnotes.write(f'{name} : {m_index}\n')
+            success, err_msg = write_molecule_files(molecule, name, test_ff=test_ff)
+            if not success:
+                fnotes.write(f'{name} : {m_index} | ERROR: {err_msg}\n')
+            else:
+                # write $system block in optgeo_options.txt
+                optfile.write(system_template.format(name=name))
+                # write the original m_index
+                fnotes.write(f'{name} : {m_index} | SUCCESS\n')
+                n_success += 1
             target_index += 1
     fnotes.close()
-    os.chdir('..')
-    # write a targets.in file
-    with open('targets.in', 'w') as outfile:
-        outfile.write(target_opts.format(name=target_name))
-    os.chdir('..')
-    print(f"Targets generation finished!")
-    print(f"You can copy contents in {os.path.join('targets', 'targets.in')} to your ForceBalance input file.")
-
+    os.chdir("..")
+    return n_success
 
 
 def main():
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("dataset", help='Name of the OptimizationDataset on QCFractal')
+    parser.add_argument("-s", "--size", default=50, type=int, help="Size of each target, equal to number of optimized geometries in each target")
+    parser.add_argument("-t", "--test_ff_fnm", help="Provide an offxml for testing the molecules created, skip the ones that failed")
     args = parser.parse_args()
 
-    make_optgeo_target(args.dataset)
+    make_optgeo_target(args.dataset, size=args.size, test_ff_fnm=args.test_ff_fnm)
 
 if __name__ == '__main__':
     main()

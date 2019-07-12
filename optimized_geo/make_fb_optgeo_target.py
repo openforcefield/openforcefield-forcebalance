@@ -6,15 +6,23 @@ import cmiles
 from openeye import oechem
 import qcportal as ptl
 client = ptl.FractalClient('https://api.qcarchive.molssi.org:443/')
-from openforcefield.topology import Molecule
 from forcebalance.molecule import Molecule
 
 ofs = oechem.oemolostream()
 
+# global_opts = """
+# $global
+# bond_denom 0.01
+# angle_denom 0.03
+# dihedral_denom 0.5
+# improper_denom 0.2
+# $end
+# """
+
 global_opts = """
 $global
-bond_denom 0.01
-angle_denom 0.03
+bond_denom 0.05
+angle_denom 0.1
 dihedral_denom 0.5
 improper_denom 0.2
 $end
@@ -86,28 +94,52 @@ def write_molecule_files(molecule, name, test_ff=None):
         ofs.close()
     success = True
     err_msg = ""
-    if test_ff != None:
+    # test if bonds changed
+    if not check_connectivity(f'{name}.mol2'):
+        success = False
+        err_msg = "Bonds changed after rebuild"
+        if not os.path.exists('../err_bonds_changed'):
+            os.mkdir('../err_bonds_changed')
+        shutil.move(f'{name}.mol2', f'../err_bonds_changed/{name}.mol2')
+        os.remove(f'{name}.xyz')
+    # test if can be created by the test_ff
+    if success == True and test_ff != None:
         from openforcefield.topology import Molecule as Off_Molecule
         from openforcefield.topology import Topology as Off_Topology
         try:
-            off_molecule = Off_Molecule.from_file(f'{name}.mol2', allow_undefined_stereo=True)
+            off_molecule = Off_Molecule.from_file(f'{name}.mol2')
             off_topology = Off_Topology.from_molecules(off_molecule)
             test_ff.create_openmm_system(off_topology)
         except Exception as e:
             success = False
-            err_msg = e.args[0]
+            err_msg = str(e)
+            if not os.path.exists('../error_mol2s'):
+                os.mkdir('../error_mol2s')
+            shutil.move(f'{name}.mol2', f'../error_mol2s/{name}.mol2')
+            os.remove(f'{name}.xyz')
     if success == True:
         # use ForceBalance Molecule to generate pdb file
         # because the oechem.OEWriteMolecule will mess up with atom indices
         fbmol = Molecule(f'{name}.mol2')
         fbmol.write(f'{name}.pdb')
-    else:
-        if not os.path.exists('../error_mol2s'):
-            os.mkdir('../error_mol2s')
-        shutil.move(f'{name}.mol2', f'../error_mol2s/{name}.mol2')
-        os.remove(f'{name}.xyz')
     return success, err_msg
 
+def check_connectivity(filename):
+    """ Check if the connectivity in the molecule file is consistent with geometry
+    Using force balance Molecule.build_bonds() for this first draft
+    This can be improved by OpenEye or other methods
+    """
+    fbmol = Molecule(filename)
+    orig_bonds = set(fbmol.bonds)
+    # for b1, b2 in fbmol.bonds:
+    #     bond = (b1, b2) if b1 < b2 else (b2, b1)
+    #     orig_bonds.add(bond)
+    fbmol.build_bonds()
+    new_bonds = set(fbmol.bonds)
+    # for b1, b2 in fbmol.bonds:
+    #     bond = (b1, b2) if b1 < b2 else (b2, b1)
+    #     new_bonds.add(bond)
+    return orig_bonds == new_bonds
 
 def make_optgeo_target(dataset_name, size=None, test_ff_fnm=None):
     final_molecules = load_final_molecules(dataset_name)

@@ -29,14 +29,12 @@ FFTYPE_MAP = {
     'Out-of-Plane': 'ImproperTorsions',
 }
 
-def read_aggregate_optgeo_data(tmp_folder, iter_folder, forcefield, targets_folder='targets'):
+def read_aggregate_optgeo_data(tmp_folder, iter_folder, forcefield, targets_folder='targets', compare_iter0=True):
     """ Read optgeo target data from tmp folder
     tmp_folder: optimize.tmp
     iter_folder: iter_0040
     """
     optgeo_folders = [os.path.join(tmp_folder, f) for f in os.listdir(tmp_folder) if 'optgeo' in f and os.path.isdir(os.path.join(tmp_folder, f))]
-    if iter_folder == None:
-        iter_folder = max(os.listdir(optgeo_folders[0]))
     optgeo_folders.sort()
     print(f"Reading optgeo target rmsd_decomposition from {len(optgeo_folders)} folders")
     data_qm_v_mm = {t:{} for t in FFTYPE_MAP.values()}
@@ -45,6 +43,10 @@ def read_aggregate_optgeo_data(tmp_folder, iter_folder, forcefield, targets_fold
         rmsd_fnm = os.path.join(fol, iter_folder, 'rmsd_decomposition.txt')
         print(f" - reading {rmsd_fnm}")
         data = read_rmsd_decomposition(rmsd_fnm)
+        if compare_iter0:
+            rmsd_fnm_iter0 = os.path.join(fol, 'iter_0000', 'rmsd_decomposition.txt')
+            print(f" - reading {rmsd_fnm_iter0}")
+            data_iter0 = read_rmsd_decomposition(rmsd_fnm_iter0)
         print(f" - found data for {len(data)} molecules")
         print(f" - parsing smirks for each molecule")
         tgt_folder = os.path.join(targets_folder, os.path.basename(fol))
@@ -66,7 +68,8 @@ def read_aggregate_optgeo_data(tmp_folder, iter_folder, forcefield, targets_fold
                         'smirks': smirks,
                         'id': sid,
                         'qm': qm,
-                        'mm': mm
+                        'mm': mm,
+                        'mm_iter0': data_iter0[mol_name][fftype][atom_indices][1] if compare_iter0 else None
                     })
     return data_qm_v_mm
 
@@ -115,9 +118,9 @@ def read_rmsd_decomposition(fnm):
                 # use the minimum diff to replace mm
                 mm = qm - diff
                 # convert radian to degree
-                if fftype != 'Bonds':
-                    qm = qm * 180 / np.pi
-                    mm = mm * 180 / np.pi
+                # if fftype != 'Bonds':
+                #     qm = qm * 180 / np.pi
+                #     mm = mm * 180 / np.pi
                 # if mol_name.startswith('350'):
                 #     print(f"{mol_name} {fftype} {atom_idxs} {qm} {mm}")
                 res[mol_name][fftype][atom_idxs] = (qm, mm)
@@ -145,7 +148,7 @@ def compute_smirnoff_assignments(forcefield, mol2_fnm):
         res['ImproperTorsions'][atom_indices] = (imp_torsion_param.id, imp_torsion_param.smirks)
     return res
 
-def generate_analysis_plots(data_qm_v_mm, orig_equilibrium, new_equilibrium):
+def generate_analysis_plots(data_qm_v_mm, orig_equilibrium, new_equilibrium, iter_folder):
     folder = 'optgeo_scatter_plots'
     if os.path.exists(folder):
         shutil.rmtree(folder)
@@ -161,19 +164,24 @@ def generate_analysis_plots(data_qm_v_mm, orig_equilibrium, new_equilibrium):
             if len(dlist) > 0:
                 qm_array = [d['qm'] for d in dlist]
                 mm_array = [d['mm'] for d in dlist]
+                mm_array_iter0 = [d['mm_iter0'] for d in dlist] if dlist[0]['mm_iter0'] != None else None
                 smirks = dlist[0]['smirks']
                 title = f"<{fftype}> {sid}: {smirks} [n={len(dlist)}]"
-                plot_qm_mm_scatter(qm_array, mm_array, f"{sid}.pdf", title=title,
+                plot_qm_mm_scatter(qm_array, mm_array, f"{sid}.pdf", scatter_label=iter_folder, mm_array_iter0=mm_array_iter0, title=title,
                     orig_equil=orig_equilibrium.get(sid), new_equil=new_equilibrium.get(sid))
         os.chdir('..')
     os.chdir('..')
 
-def plot_qm_mm_scatter(qm_array, mm_array, fnm, title="", orig_equil=None, new_equil=None):
+def plot_qm_mm_scatter(qm_array, mm_array, fnm, scatter_label=None, mm_array_iter0=None, title="", orig_equil=None, new_equil=None):
     plt.Figure()
-    plt.scatter(mm_array, qm_array, marker='x')
+    if mm_array_iter0 != None:
+        plt.scatter(mm_array_iter0, qm_array, marker='x', color='C1', alpha=0.5, label='iter_0')
+    else:
+        mm_array_iter0 = []
+    plt.scatter(mm_array, qm_array, marker='x', alpha=0.5, color='C0', label=scatter_label)
     plt.xlabel('MM Value')
     plt.ylabel('QM Value')
-    xmin, xmax = min(mm_array), max(mm_array)
+    xmin, xmax = min(mm_array + mm_array_iter0), max(mm_array + mm_array_iter0)
     ymin, ymax = min(qm_array), max(qm_array)
     vmin, vmax = min(xmin, ymin), max(xmax, ymax)
     rng = vmax - vmin
@@ -184,7 +192,7 @@ def plot_qm_mm_scatter(qm_array, mm_array, fnm, title="", orig_equil=None, new_e
         plt.plot([orig_equil, orig_equil], [vmin, vmax], color='C1', alpha=0.5, label='orig equilibrium value')
         plt.plot([new_equil, new_equil], [vmin, vmax], color='C2', alpha=0.5, label='new equilibrium value')
     # reference diagnoal line
-    plt.plot([vmin,vmax],[vmin,vmax], '--', color='black', alpha=0.5, label='reference')
+    plt.plot([vmin,vmax],[vmin,vmax], '--', color='black', alpha=0.5, label='reference QM=MM')
     plt.legend(framealpha=0.5)
     plt.title(title)
     # plt.tight_layout()
@@ -210,25 +218,51 @@ def get_equilibrium_values(forcefield):
             equilibrium_values[param.id] = v
     return equilibrium_values
 
-res_data_fnm = 'optgeo_analysis_data.p'
 
-if os.path.exists(res_data_fnm):
-    data_qm_v_mm = pickle.load(open(res_data_fnm, 'rb'))
-else:
-    forcefield = ForceField('forcefield/smirnoff99Frosst_experimental.offxml')
-    tmp_folder = 'optimize.tmp'
-    iter_folder = None
-    data_qm_v_mm = read_aggregate_optgeo_data(tmp_folder, iter_folder, forcefield)
-    # save the data on disk
-    with open(res_data_fnm, 'wb') as pfile:
-        pickle.dump(data_qm_v_mm, pfile)
+def main():
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-x', '--ffxml', default='forcefield/smirnoff99Frosst_experimental.offxml', help='Forcefield file to use')
+    parser.add_argument('--new_xml', default='result/optimize/param_valence.offxml', help='New force field file after fitting')
+    parser.add_argument('-i', '--iter', type=int, default=None, help='iteration number to read rmsd')
+    parser.add_argument('-l', '--load_pickle', help='Load data directly from pickle file')
 
-# get eq values
-orig_forcefield = ForceField('forcefield/smirnoff99Frosst_experimental.offxml')
-new_forcefield = ForceField('result/optimize/param_valence.offxml', allow_cosmetic_attributes=True)
-orig_equilibrium = get_equilibrium_values(orig_forcefield)
-new_equilibrium = get_equilibrium_values(new_forcefield)
+    args = parser.parse_args()
 
-# generate plots
-print("Generating plots")
-generate_analysis_plots(data_qm_v_mm, orig_equilibrium, new_equilibrium)
+    if args.load_pickle:
+        data_save = pickle.load(open(args.load_pickle, 'rb'))
+        data_qm_v_mm = data_save['data_qm_v_mm']
+        iter_folder = data_save['iter_folder']
+    else:
+        forcefield = ForceField(args.ffxml, allow_cosmetic_attributes=True)
+        tmp_folder = 'optimize.tmp'
+        if args.iter != None:
+            iter_folder = f"iter_{args.iter:04d}"
+        else:
+            optgeo_folders = [os.path.join(tmp_folder, f) for f in os.listdir(tmp_folder) if 'optgeo' in f and os.path.isdir(os.path.join(tmp_folder, f))]
+            iter_folder = max([f for f in os.listdir(optgeo_folders[0]) if f.startswith('iter_')])
+        compare_iter0 = (iter_folder != 'iter_0000')
+        data_qm_v_mm = read_aggregate_optgeo_data(tmp_folder, iter_folder, forcefield, compare_iter0=compare_iter0)
+        # save the data on disk
+        res_data_fnm = 'optgeo_analysis_data.p'
+        with open(res_data_fnm, 'wb') as pfile:
+            data_save = {
+                'ffxml': args.ffxml,
+                'tmp_folder': tmp_folder,
+                'iter_folder': iter_folder,
+                'data_qm_v_mm': data_qm_v_mm,
+            }
+            pickle.dump(data_save, pfile)
+
+    # get eq values
+    orig_forcefield = ForceField(args.ffxml, allow_cosmetic_attributes=True)
+    new_forcefield = ForceField(args.new_xml, allow_cosmetic_attributes=True)
+    orig_equilibrium = get_equilibrium_values(orig_forcefield)
+    new_equilibrium = get_equilibrium_values(new_forcefield)
+
+    # generate plots
+    print("Generating plots")
+    generate_analysis_plots(data_qm_v_mm, orig_equilibrium, new_equilibrium, iter_folder)
+
+if __name__ == '__main__':
+    main()

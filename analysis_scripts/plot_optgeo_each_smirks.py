@@ -35,6 +35,8 @@ def read_aggregate_optgeo_data(tmp_folder, iter_folder, forcefield, targets_fold
     iter_folder: iter_0040
     """
     optgeo_folders = [os.path.join(tmp_folder, f) for f in os.listdir(tmp_folder) if 'optgeo' in f and os.path.isdir(os.path.join(tmp_folder, f))]
+    if iter_folder == None:
+        iter_folder = max(os.listdir(optgeo_folders[0]))
     optgeo_folders.sort()
     print(f"Reading optgeo target rmsd_decomposition from {len(optgeo_folders)} folders")
     data_qm_v_mm = {t:{} for t in FFTYPE_MAP.values()}
@@ -215,7 +217,7 @@ if os.path.exists(res_data_fnm):
 else:
     forcefield = ForceField('forcefield/smirnoff99Frosst_experimental.offxml')
     tmp_folder = 'optimize.tmp'
-    iter_folder = 'iter_0032'
+    iter_folder = None
     data_qm_v_mm = read_aggregate_optgeo_data(tmp_folder, iter_folder, forcefield)
     # save the data on disk
     with open(res_data_fnm, 'wb') as pfile:

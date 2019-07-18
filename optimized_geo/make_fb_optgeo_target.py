@@ -10,21 +10,19 @@ from forcebalance.molecule import Molecule
 
 ofs = oechem.oemolostream()
 
-# global_opts = """
-# $global
-# bond_denom 0.01
-# angle_denom 0.03
-# dihedral_denom 0.5
-# improper_denom 0.2
-# $end
-# """
-
+# NOTE by QYD:
+# 1. dihedral_denom is 0 for now because equilibrium dihedral angle
+#    does not have a well-defined gradient against Torsion k when k is near 0
+#    i.e. k=+0.001  =>  equilibrium dihedral angle = 0.0
+#         k=-0.001  =>  equilibrium dihedral angle = 180.0
+# 2. The bond_denom and angle_denom is estimated to have similar energy impact
+#    based on bond_k ~ 1000/ang^2  angle_k ~100/radian^2
 global_opts = """
 $global
 bond_denom 0.05
-angle_denom 0.1
-dihedral_denom 0.5
-improper_denom 0.2
+angle_denom 8
+dihedral_denom 0
+improper_denom 20
 $end
 """
 
@@ -37,11 +35,12 @@ mol2 {name}.mol2
 $end
 """
 
+# Note: weight is adjusted lower to prevent dominating the total objective
 target_opts = """
 $target
 name {name}
 type OptGeoTarget_SMIRNOFF
-weight 1.0
+weight 0.1
 writelevel 1
 remote 1
 $end

@@ -106,7 +106,8 @@ def plot_torsion_energy_compare(offxml_list, td_results_folder, processed_molecu
             # evalute mm energies for each force field
             for context, ffname in zip(contexts, ff_names):
                 mm_energies = evaluate_energies(context, fb_mol.xyzs)
-                mm_energies -= mm_energies[ground_idx]
+                # mm_energies -= mm_energies[ground_idx]
+                mm_energies -= mm_energies.min()
                 energies_data_dict[ffname] = mm_energies
             # save the data on disk
             data_file_name = os.path.splitext(f)[0] + '_energies.pickle'

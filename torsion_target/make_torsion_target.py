@@ -4,6 +4,8 @@ import os
 import shutil
 import pickle
 import numpy as np
+import copy
+import json
 
 import cmiles
 from openeye import oechem
@@ -49,7 +51,27 @@ def download_torsiondrive_data(dataset_name):
                     (-135,): np.array([2.27e-5, -4.69e-5, ...]),
                     (-150,): np.array([0.33e-5, -5.93e-5, ...]),
                     (-120,): np.array([4.21e-5, -1.22e-5, ...]),
-                }
+                },
+                'keywords': {
+                    'dihedrals': [(2, 5, 4, 14)],
+                    'grid_spacing': [15],
+                    'dihedral_ranges': None,
+                    'energy_decrease_thresh': None,
+                    'energy_upper_limit': 0.05,
+                },
+                'attributes': {
+                    'canonical_explicit_hydrogen_smiles': '[H]C([H])([H])OC([H])(O[H])OC([H])([H])[H]',
+                    'canonical_isomeric_explicit_hydrogen_mapped_smiles': '[H:7][C:1]([H:8])([H:9])[O:5][C:3]([H:13])([O:4][H:14])[O:6][C:2]([H:10])([H:11])[H:12]',
+                    'canonical_isomeric_explicit_hydrogen_smiles': '[H]C([H])([H])OC([H])(O[H])OC([H])([H])[H]',
+                    'canonical_isomeric_smiles': 'COC(O)OC',
+                    'canonical_smiles': 'COC(O)OC',
+                    'inchi_key': 'IIGJYLXJNYBXEO-UHFFFAOYSA-N',
+                    'molecular_formula': 'C3H8O3',
+                    'provenance': 'cmiles_v0.1.5_openeye_2019.Apr.2',
+                    'standard_inchi': 'InChI=1S/C3H8O3/c1-5-3(4)6-2/h3-4H,1-2H3',
+                    'unique_protomer_representation': 'COC(O)OC',
+                    'unique_tautomer_representation': 'COC(O)OC',
+                },
             },
             ...
         }
@@ -64,20 +86,22 @@ def download_torsiondrive_data(dataset_name):
     for entry_index in ds.df.index:
         data_entry = ds.get_entry(entry_index)
         td_record_id = data_entry.object_map[spec_name]
-        map_record_id_entry_index[td_record_id] = entry_index
+        map_record_id_entry_index[td_record_id] = entry_index, data_entry.attributes
     print(f"Found {len(map_record_id_entry_index)} torsiondrive records")
     # query all torsiondrive records at the same time
     td_record_ids = list(map_record_id_entry_index.keys())
     torsiondrive_data = {}
     for i, td_record in enumerate(client.query_procedures(id=td_record_ids), 1):
-        entry_index = map_record_id_entry_index[td_record.id]
-        print(f"{i:5d} : {entry_index:30s} status {td_record.status}")
+        entry_index, attributes = map_record_id_entry_index[td_record.id]
+        print(f"{i:5d} : {entry_index:50s} status {td_record.status}")
         if td_record.status == 'COMPLETE':
             torsiondrive_data[entry_index] = {
                 'initial_molecules': client.query_molecules(td_record.initial_molecule),
                 'final_molecules': td_record.get_final_molecules(),
                 'final_energies': td_record.get_final_energies(),
-                'final_gradients': {gid: np.array(res.return_result) for gid, res in td_record.get_final_results().items()}
+                'final_gradients': {gid: np.array(res.return_result) for gid, res in td_record.get_final_results().items()},
+                'keywords': td_record.keywords.dict(),
+                'attributes': attributes,
             }
     print(f'Downloaded torsion drive data for {len(torsiondrive_data)} completed entries')
     # save as pickle file
@@ -141,14 +165,15 @@ def make_torsiondrive_target(dataset_name, torsiondrive_data, test_ff=None):
         # test mol2 file
         success = True
         if test_ff != None:
-            success, msg = test_ff_mol2(test_ff, 'input.mol2')
+            success, msg, molecule_labels = test_ff_mol2(test_ff, 'input.mol2')
         if not success:
             if not os.path.exists('../error_mol2s'):
                 os.mkdir('../error_mol2s')
             shutil.move(f'input.mol2', f'../error_mol2s/{target_name}.mol2')
             with open(f'../error_mol2s/{target_name}_error.txt', 'w') as notefile:
-                notefile.write(f'{dataset_name}\nentry {entry_index}\ntarget_name {target_name}\n')
-                notefile.write(msg)
+                notefile.write(f'{dataset_name}\ntarget_name {target_name}\n')
+                notefile.write(f'entry {entry_index}\ntd_keywords {td_data["keywords"]}\n')
+                notefile.write(f'error message:\n{msg}')
             # remove this folder
             os.chdir('..')
             shutil.rmtree(target_name)
@@ -174,8 +199,24 @@ def make_torsiondrive_target(dataset_name, torsiondrive_data, test_ff=None):
                 target_mol.qm_grads.append(td_data['final_gradients'][grid_id])
             target_mol.write('scan.xyz')
             target_mol.write('qdata.txt')
-            target_names.append(target_name)
+            # pick metadata to write into the metadata.json file
+            metadata = copy.deepcopy(td_data['keywords'])
+            metadata['dataset_name'] = dataset_name
+            metadata['entry_label'] = entry_index
+            metadata['canonical_smiles'] = td_data['attributes'].get('canonical_smiles', 'unknown')
+            metadata['torsion_grid_ids'] = sorted_grid_ids
+            # find SMIRKs for torsion being scaned if test_ff is provided
+            if test_ff:
+                metadata['smirks'] = []
+                metadata['smirks_ids'] = []
+                for torsion_indices in td_data['keywords']['dihedrals']:
+                    param = molecule_labels['ProperTorsions'][tuple(torsion_indices)]
+                    metadata['smirks'].append(param.smirks)
+                    metadata['smirks_ids'].append(param.id)
+            with open('metadata.json', 'w') as jsonfile:
+                json.dump(metadata, jsonfile, indent=2)
             # finish this target
+            target_names.append(target_name)
             os.chdir('..')
         target_idx += 1
 
@@ -207,9 +248,10 @@ def test_ff_mol2(test_ff, mol2_fnm):
         off_molecule = Off_Molecule.from_file(mol2_fnm)
         off_topology = Off_Topology.from_molecules(off_molecule)
         test_ff.create_openmm_system(off_topology)
+        molecule_labels = test_ff.label_molecules(off_topology)[0]
     except Exception as e:
-        return False, str(e)
-    return True, ''
+        return False, str(e), None
+    return True, '', molecule_labels
 
 
 def main():
@@ -218,7 +260,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("dataset", help='Name of the OptimizationDataset on QCFractal')
     parser.add_argument("-l", "--load_pickle", help='Load downloaded torsiondrive data from pickle file')
-    parser.add_argument("-t", "--test_ff_fnm", help="Provide an offxml for testing the molecules created, skip the ones that failed")
+    parser.add_argument("-t", "--test_ff_fnm", required=True, help="Provide an offxml for testing the molecules created, skip the ones that failed")
     args = parser.parse_args()
 
     if args.load_pickle:
@@ -227,7 +269,8 @@ def main():
     else:
         torsiondrive_data = download_torsiondrive_data(args.dataset)
 
-    test_ff = ForceField(args.test_ff_fnm) if args.test_ff_fnm else None
+    # require the test_ff for metadata
+    test_ff = ForceField(args.test_ff_fnm)
     make_torsiondrive_target(args.dataset, torsiondrive_data, test_ff=test_ff)
 
 if __name__ == '__main__':

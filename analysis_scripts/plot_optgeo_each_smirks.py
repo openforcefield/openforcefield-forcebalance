@@ -29,7 +29,7 @@ FFTYPE_MAP = {
     'Out-of-Plane': 'ImproperTorsions',
 }
 
-def read_aggregate_optgeo_data(tmp_folder, iter_folder, forcefield, targets_folder='targets', compare_iter0=True):
+def read_aggregate_optgeo_data(tmp_folder, iter_folder, targets_folder, forcefield, compare_iter0=True):
     """ Read optgeo target data from tmp folder
     tmp_folder: optimize.tmp
     iter_folder: iter_0040
@@ -225,6 +225,8 @@ def main():
     parser.add_argument('-x', '--ffxml', default='forcefield/smirnoff99Frosst_experimental.offxml', help='Forcefield file to use')
     parser.add_argument('--new_xml', default='result/optimize/param_valence.offxml', help='New force field file after fitting')
     parser.add_argument('-i', '--iter', type=int, default=None, help='iteration number to read rmsd')
+    parser.add_argument('-f', '--tmp_folder', default='optimize.tmp')
+    parser.add_argument('-t', '--targets_folder', default='targets')
     parser.add_argument('-l', '--load_pickle', help='Load data directly from pickle file')
 
     args = parser.parse_args()
@@ -235,14 +237,14 @@ def main():
         iter_folder = data_save['iter_folder']
     else:
         forcefield = ForceField(args.ffxml, allow_cosmetic_attributes=True)
-        tmp_folder = 'optimize.tmp'
+        tmp_folder = args.tmp_folder
         if args.iter != None:
             iter_folder = f"iter_{args.iter:04d}"
         else:
             optgeo_folders = [os.path.join(tmp_folder, f) for f in os.listdir(tmp_folder) if 'optgeo' in f and os.path.isdir(os.path.join(tmp_folder, f))]
             iter_folder = max([f for f in os.listdir(optgeo_folders[0]) if f.startswith('iter_')])
         compare_iter0 = (iter_folder != 'iter_0000')
-        data_qm_v_mm = read_aggregate_optgeo_data(tmp_folder, iter_folder, forcefield, compare_iter0=compare_iter0)
+        data_qm_v_mm = read_aggregate_optgeo_data(tmp_folder, iter_folder, args.targets_folder, forcefield, compare_iter0=compare_iter0)
         # save the data on disk
         res_data_fnm = 'optgeo_analysis_data.p'
         with open(res_data_fnm, 'wb') as pfile:

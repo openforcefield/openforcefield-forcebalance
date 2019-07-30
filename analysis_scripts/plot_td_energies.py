@@ -63,7 +63,7 @@ def collect_td_targets_data(tmp_folder, targets_folder):
             data[tgt_name]['iterdata'][iter_idx] = np.loadtxt(data_file, ndmin=2)
     return data
 
-def plot_td_targets_data(data, folder_name='td_targets_plots', compare_first=True):
+def plot_td_targets_data(data, folder_name='td_targets_plots', compare_first=True, iteration=None):
     ''' plot the target data, compare first and last iteration '''
     # aggregate metadata for counts
     smirks_counter = Counter(sid for tgt_data in data.values() for sid in tgt_data['metadata']['smirks_ids'])
@@ -79,15 +79,16 @@ def plot_td_targets_data(data, folder_name='td_targets_plots', compare_first=Tru
         iter_list = sorted(iterdata.keys())
         # create an new figure
         plt.Figure()
-        last_iter_data = iterdata[iter_list[-1]]
+        last_iter = iteration if iteration != None else iter_list[-1]
+        last_iter_data = iterdata[last_iter]
         # check qm - mm for last iter
         max_diff = np.max(np.abs(last_iter_data[:, 2]))
         if max_diff > 50:
-            print(f"Warning, {tgt_name} iter {iter_list[-1]} max |qm-mm| > 50 kJ/mol")
+            print(f"Warning, {tgt_name} iter {last_iter} max |qm-mm| > 50 kJ/mol")
         # plot qm
         plt.plot(last_iter_data[:,0], label='QM Relative Energies')
         # plot mm
-        plt.plot(last_iter_data[:,1], label=f'MM Iter {iter_list[-1]}')
+        plt.plot(last_iter_data[:,1], label=f'MM Iter {last_iter}')
         # plot first iter
         if compare_first and len(iter_list) > 0:
             first_iter_data = iterdata[iter_list[0]]
@@ -136,12 +137,19 @@ def main():
     parser = argparse.ArgumentParser('collect td targets data from fitting tmp folder and plot them')
     parser.add_argument('-f', '--tmp_folder', default='optimize.tmp')
     parser.add_argument('-t', '--targets_folder', default='targets')
-    #parser.add_argument('-l', '--load_pickle', help='Load data directly from pickle file')
-    #parser.add_argument('-i', '--iter', type=int, default=None, help='iteration number to read rmsd')
+    parser.add_argument('-l', '--load_pickle', help='Load data directly from pickle file')
+    parser.add_argument('-i', '--iteration', type=int, default=None, help='iteration number to read rmsd')
     args = parser.parse_args()
 
-    data = collect_td_targets_data(args.tmp_folder, args.targets_folder)
-    plot_td_targets_data(data)
+    if args.load_pickle:
+        with open(args.load_pickle, 'rb') as pfile:
+            data = pickle.load(pfile)
+    else:
+        data = collect_td_targets_data(args.tmp_folder, args.targets_folder)
+        # save data as pickle file
+        with open('td_plot_data.pickle', 'wb') as pfile:
+            pickle.dump(data, pfile)
+    plot_td_targets_data(data, iteration=args.iteration)
 
 if __name__ == '__main__':
     main()

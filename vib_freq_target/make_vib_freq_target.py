@@ -171,12 +171,16 @@ def make_vib_freq_target(dataset_name, hessian_data, test_ff=None):
         # write input.mol2 file
         qcjson_mol = qcmol.json_dict()
         oemol = cmiles.utils.load_molecule(qcjson_mol)
-        ofs.open(f'input.mol2')
+        ofs.open('input.mol2')
         oechem.OEWriteMolecule(ofs, oemol)
         ofs.close()
         # test mol2 file
         success = True
-        if test_ff != None:
+        # test if bonds changed
+        if not check_connectivity('input.mol2'):
+            success = False
+            msg = "Bonds changed after rebuild"
+        if success and test_ff != None:
             success, msg, molecule_labels = test_ff_mol2(test_ff, 'input.mol2')
         if not success:
             if not os.path.exists('../error_mol2s'):
@@ -189,7 +193,7 @@ def make_vib_freq_target(dataset_name, hessian_data, test_ff=None):
             # remove this folder
             os.chdir('..')
             shutil.rmtree(target_name)
-            print("Error " + msg.replace('\n', ';'))
+            print("Error: " + msg.replace('\n', ';'))
         else:
             # write conf.pdb file
             fbmol = Molecule(f'input.mol2')
@@ -219,6 +223,23 @@ def get_int_fmt_string(n):
         count += 1
     return f"{{:0{count}d}}"
 
+def check_connectivity(filename):
+    """ Check if the connectivity in the molecule file is consistent with geometry
+    Using force balance Molecule.build_bonds() for this first draft
+    This can be improved by OpenEye or other methods
+    """
+    fbmol = Molecule(filename)
+    orig_bonds = set(fbmol.bonds)
+    # for b1, b2 in fbmol.bonds:
+    #     bond = (b1, b2) if b1 < b2 else (b2, b1)
+    #     orig_bonds.add(bond)
+    fbmol.build_bonds()
+    new_bonds = set(fbmol.bonds)
+    # for b1, b2 in fbmol.bonds:
+    #     bond = (b1, b2) if b1 < b2 else (b2, b1)
+    #     new_bonds.add(bond)
+    return orig_bonds == new_bonds
+
 def test_ff_mol2(test_ff, mol2_fnm):
     """
     Test creating system with mol2 file
@@ -247,7 +268,6 @@ def create_vdata_txt(pdb_fnm, data):
     hessian = data['hessian']
     mass_weighted_hessian = hessian * invert_sqrt_mass_array_repeat[:, np.newaxis] * invert_sqrt_mass_array_repeat[np.newaxis, :]
     mass_weighted_hessian *= 937583.07 # convert units from Eh / bohr^2 * dalton to 10^24 s^-2
-    # mass_weighted_hessian *= 2625.50 # convert units from Eh / nanometer^2 * dalton to 10^24 s^-2
     # perform normal mode analysis
     freqs, normal_modes = compute_normal_modes(mass_weighted_hessian)
     # write vdata.txt

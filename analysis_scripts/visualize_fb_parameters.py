@@ -122,19 +122,57 @@ def plot_paramters(param_list):
         plt.tight_layout()
         filename = ptype.replace('/', '_') + '.pdf'
         plt.savefig(filename)
-
         plt.close()
 
+
+def replace_SMIRKs_pattern_with_ids(param_list, ffxml):
+    # read the ffxml to get a replacement dictionary
+    smirk_sid = {}
+    from lxml import etree as ET
+    tree = ET.parse(ffxml)
+    root = tree.getroot()
+    for child in root:
+        ptype_prefix = child.tag
+        ptype_name_replace = {}
+        for fchild in child:
+            params = []
+            if 'smirks' in fchild.attrib and 'id' in fchild.attrib:
+                smirks = fchild.get('smirks')
+                sid = fchild.get('id')
+                ptype_name_replace[smirks] = sid
+        if ptype_name_replace:
+            smirk_sid[ptype_prefix] = ptype_name_replace
+    # use the replacements to update parameter names
+    new_param_list = {}
+    for ptype in param_list:
+        new_param_list[ptype] = {}
+        ptype_prefix = ptype.split('/')[0]
+        for name, value in param_list[ptype].items():
+            name_split = name.rsplit(maxsplit=1)
+            if len(name_split) == 2:
+                name_prefix, smirks = name_split
+                sid = smirk_sid[ptype_prefix].get(smirks, None)
+                if sid != None:
+                    new_name = name_prefix + ' ' + sid
+                    new_param_list[ptype][new_name] = value
+    return new_param_list
 
 def main():
     import argparse, os, shutil, subprocess
     parser = argparse.ArgumentParser(description='Read a ForceBalance output file, bar plot the difference between initial and final parameters.')
     parser.add_argument('fbout', help='ForceBalance output file')
     parser.add_argument('-o', '--outfolder', default='param_change', help='Folder name to save each plot as a separate file')
+    parser.add_argument('-x', '--ffxml', help='SMIRNOFF Forcefield offxml file, if specified, will use the SMIRKs IDs like b1 instead of the patten like [#6X4:1]-[#6X4:2]')
     args = parser.parse_args()
 
 
     param_list = read_fb_params(args.fbout)
+
+    # replace SMIRKs pattern with ids for better print
+    if args.ffxml:
+        param_list = replace_SMIRKs_pattern_with_ids(param_list, args.ffxml)
+
+    # create output folder for saving plots
     if os.path.exists(args.outfolder):
         shutil.rmtree(args.outfolder)
     os.mkdir(args.outfolder)

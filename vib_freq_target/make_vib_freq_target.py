@@ -114,15 +114,18 @@ def download_hessian_data(dataset_name):
 def filter_hessian_data(hessian_data):
     """ Filter contents of the hessian data, pick the entry with lowest energy """
     res = {}
+    lowest_energy = {}
     print("Start filtering hessian data by picking the entry with lowest energy")
     for entry_name, data in hessian_data.items():
         mol_name = entry_name.rsplit('-', maxsplit=1)[0]
-        if mol_name not in res:
-            res[mol_name] = data
+        if mol_name not in lowest_energy:
+            lowest_energy[mol_name] = data['energy']
+            res[entry_name] = data
         else:
-            current_energy = res[mol_name]['energy']
+            current_energy = lowest_energy[mol_name]
             if data['energy'] < current_energy:
-                res[mol_name] = data
+                lowest_energy[mol_name] = data['energy']
+                res[entry_name] = data
     print(f"Filter hessian data complete, {len(res)} data entries left")
     return res
 

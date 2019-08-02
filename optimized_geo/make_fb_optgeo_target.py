@@ -214,12 +214,12 @@ def create_target(target_name, moledules_data, test_ff=None, start_idx=0):
             # write molecule files
             success, err_msg = write_molecule_files(molecule, name, test_ff=test_ff)
             if not success:
-                fnotes.write(f'{name} : {m_index} | ERROR: {err_msg}\n')
+                fnotes.write(f'{name} : {m_index} molecule_id {molecule.id} | ERROR: {err_msg}\n')
             else:
                 # write $system block in optgeo_options.txt
                 optfile.write(system_template.format(name=name))
                 # write the original m_index
-                fnotes.write(f'{name} : {m_index} | SUCCESS\n')
+                fnotes.write(f'{name} : {m_index} molecule_id {molecule.id} | SUCCESS\n')
                 n_success += 1
             target_index += 1
     fnotes.close()

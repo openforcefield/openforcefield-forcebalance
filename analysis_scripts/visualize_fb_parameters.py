@@ -117,6 +117,8 @@ def plot_paramters(param_list):
         final_values = initial_values + value_changes
         xmin = min(initial_values.min(), final_values.min())
         xmax = max(initial_values.max(), final_values.max())
+        if prior_value is not None:
+            xmax = max(xmax, prior_value)
         padding = (xmax - xmin) * 0.01
         plt.xlim(xmin, xmax+padding)
         plt.tight_layout()

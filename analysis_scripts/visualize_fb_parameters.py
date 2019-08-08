@@ -150,13 +150,16 @@ def replace_SMIRKs_pattern_with_ids(param_list, ffxml):
         new_param_list[ptype] = {}
         ptype_prefix = ptype.split('/')[0]
         for name, value in param_list[ptype].items():
-            name_split = name.rsplit(maxsplit=1)
-            if len(name_split) == 2:
-                name_prefix, smirks = name_split
-                sid = smirk_sid[ptype_prefix].get(smirks, None)
-                if sid != None:
-                    new_name = name_prefix + ' ' + sid
-                    new_param_list[ptype][new_name] = value
+            if name == 'PriorWidth':
+                new_param_list[ptype][name] = value
+            else:
+                name_split = name.rsplit(maxsplit=1)
+                if len(name_split) == 2:
+                    name_prefix, smirks = name_split
+                    sid = smirk_sid[ptype_prefix].get(smirks, None)
+                    if sid != None:
+                        new_name = name_prefix + ' ' + sid
+                        new_param_list[ptype][new_name] = value
     return new_param_list
 
 def main():

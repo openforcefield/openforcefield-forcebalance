@@ -86,13 +86,13 @@ def plot_td_targets_data(data, folder_name='td_targets_plots', compare_first=Tru
         if max_diff > 50:
             print(f"Warning, {tgt_name} iter {last_iter} max |qm-mm| > 50 kJ/mol")
         # plot qm
-        plt.plot(last_iter_data[:,0], label='QM Relative Energies')
+        plt.plot(last_iter_data[:,0], label='QM Relative Energies', color='C0')
         # plot mm
-        plt.plot(last_iter_data[:,1], label=f'MM Iter {last_iter}')
+        plt.plot(last_iter_data[:,1], label=f'MM Iter {last_iter}', color='C2')
         # plot first iter
         if compare_first and len(iter_list) > 0:
             first_iter_data = iterdata[iter_list[0]]
-            plt.plot(first_iter_data[:, 1], label=f'MM Iter {iter_list[0]}')
+            plt.plot(first_iter_data[:, 1], label=f'MM Iter {iter_list[0]}', color='C1')
         plt.legend()
         # use strings as x axis to support >1D torsion scans
         torsion_labels = [str(gid)[1:-1] for gid in metadata['torsion_grid_ids']]

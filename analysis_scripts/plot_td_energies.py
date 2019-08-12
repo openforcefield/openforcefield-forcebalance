@@ -112,7 +112,7 @@ def plot_td_targets_data(data, folder_name='td_targets_plots', compare_first=Tru
         footnote_lines = [f'{key:<20s} {value:>59s}' for key, value in footnotes.items()]
         plt.xlabel('Torsion Angles\n\n' + '\n'.join(footnote_lines), fontdict={'family':'monospace', 'size': 8})
         # plt.xlabel('Torsion Angles')
-        plt.ylabel('Relative Energies (kJ/mol)')
+        plt.ylabel('Relative Energies (kcal/mol)')
         plt.tight_layout()
         filename = os.path.join(folder_name, tgt_name + '.pdf')
         plt.savefig(filename)

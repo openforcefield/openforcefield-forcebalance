@@ -221,7 +221,7 @@ def generate_analysis_plots(data_qm_v_mm, orig_equilibrium, new_equilibrium, ite
     os.chdir('..')
 
 def plot_qm_mm_scatter(qm_array, mm_array, fnm, scatter_label=None, mm_array_iter0=None, title="", orig_equil=None, new_equil=None):
-    plt.Figure()
+    plt.figure(figsize=(6,5))
     if mm_array_iter0 != None:
         plt.scatter(mm_array_iter0, qm_array, marker='x', color='C1', alpha=0.5, label='iter_0')
     else:
@@ -243,11 +243,11 @@ def plot_qm_mm_scatter(qm_array, mm_array, fnm, scatter_label=None, mm_array_ite
     plt.plot([vmin,vmax],[vmin,vmax], '--', color='black', alpha=0.5, label='reference QM=MM')
     plt.legend(framealpha=0.5)
     plt.title(title)
-    # plt.tight_layout()
     plt.axis('equal')
     plt.axis([vmin-0.05*rng, vmax+0.05*rng, vmin-0.05*rng, vmax+0.05*rng])
     fig = plt.gcf()
-    fig.set_size_inches(5,5)
+    # fig.set_size_inches(5,5)
+    plt.tight_layout()
     fig.savefig(fnm)
     # plt.savefig(fnm)
     plt.close()

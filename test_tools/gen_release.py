@@ -14,17 +14,20 @@ os.chdir('release')
 # make a fb-fit folder
 os.mkdir('fb-fit')
 os.chdir('fb-fit')
+print("release/fb-fit folder created")
+print("Copying fitting related files")
 # copy input/output/results into this folder
 for fnm in ['optimize.in', 'optimize.out', 'smirnoff_parameter_assignments.json']:
     shutil.copyfile(os.path.join('../..', fnm), fnm)
 for dnm in ['forcefield', 'targets', 'result']:
     shutil.copytree(os.path.join('../..', dnm), dnm)
 os.chdir('..')
-print("release/fb-fit folder created successfully")
+
 
 # make a "analysis" sub-folder
 os.mkdir('analysis')
 os.chdir('analysis')
+print("release/analysis folder created")
 
 # analysis script and running commands
 analysis_scripts_cmd = {
@@ -37,7 +40,7 @@ analysis_scripts_cmd = {
 def dualprint(msg, fp, **kwargs):
     """ print msg to both stdout and the file object """
     print(msg, **kwargs)
-    print(msg, file=fp, **kwargs)
+    print(msg, file=fp, flush=True, **kwargs)
 
 with open('run_analysis.log', 'w') as fp:
     for script, arguments in analysis_scripts_cmd.items():

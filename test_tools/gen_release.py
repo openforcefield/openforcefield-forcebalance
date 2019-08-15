@@ -29,7 +29,7 @@ os.chdir('analysis')
 # analysis script and running commands
 analysis_scripts_cmd = {
     'visualize_fb_parameters.py': '../../optimize.out -x ../../forcefield/param_valence.offxml',
-    'plot_optgeo_each_smirks.py': '-x ../../forcefield/param_valence.offxml --new_xml ../../result/optimize/param_valence.offxml -f ../../optimize.tmp -t ../../targets',
+    'plot_optgeo_each_smirks.py': '-x ../../forcefield/param_valence.offxml --new_xml ../../result/optimize/param_valence.offxml -f ../../optimize.tmp -t ../../targets -j ../../smirnoff_parameter_assignments.json',
     'plot_td_energies.py': '-f ../../optimize.tmp/ -t ../../targets/',
     'plot_vibfreq_rmsd.py': '-f ../../optimize.tmp',
 }
@@ -42,7 +42,7 @@ def dualprint(msg, fp, **kwargs):
 with open('run_analysis.log', 'w') as fp:
     for script, arguments in analysis_scripts_cmd.items():
         command = ['python', os.path.join(analysis_script_folder, script)] + arguments.split()
-        dualprint(f"-= Running script {script} =-", fp)
+        dualprint(f"\n\n-= Running script {script} =-", fp)
         dualprint(f"\n command:\n" + ' '.join(command), fp)
         print(f"\n stdout:\n", file=fp)
         subprocess.run(command, check=True, stdout=fp)

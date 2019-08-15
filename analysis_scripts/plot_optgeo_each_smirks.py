@@ -214,14 +214,14 @@ def generate_analysis_plots(data_qm_v_mm, orig_equilibrium, new_equilibrium, ite
                 mm_array = [d['mm'] for d in dlist]
                 mm_array_iter0 = [d['mm_iter0'] for d in dlist] if dlist[0]['mm_iter0'] != None else None
                 smirks = dlist[0]['smirks']
-                title = f"<{fftype}> {sid}: {smirks} [n={len(dlist)}]"
+                title = f"<{fftype}> {sid} [n={len(dlist)}]\n{smirks}"
                 plot_qm_mm_scatter(qm_array, mm_array, f"{sid}.pdf", scatter_label=iter_folder, mm_array_iter0=mm_array_iter0, title=title,
                     orig_equil=orig_equilibrium.get(sid), new_equil=new_equilibrium.get(sid))
         os.chdir('..')
     os.chdir('..')
 
 def plot_qm_mm_scatter(qm_array, mm_array, fnm, scatter_label=None, mm_array_iter0=None, title="", orig_equil=None, new_equil=None):
-    plt.figure(figsize=(6,5))
+    plt.figure(figsize=(5,5))
     if mm_array_iter0 != None:
         plt.scatter(mm_array_iter0, qm_array, marker='x', color='C1', alpha=0.5, label='iter_0')
     else:
@@ -242,14 +242,11 @@ def plot_qm_mm_scatter(qm_array, mm_array, fnm, scatter_label=None, mm_array_ite
     # reference diagnoal line
     plt.plot([vmin,vmax],[vmin,vmax], '--', color='black', alpha=0.5, label='reference QM=MM')
     plt.legend(framealpha=0.5)
-    plt.title(title)
+    plt.title(title, fontdict={'size': 9})
     plt.axis('equal')
     plt.axis([vmin-0.05*rng, vmax+0.05*rng, vmin-0.05*rng, vmax+0.05*rng])
-    fig = plt.gcf()
-    # fig.set_size_inches(5,5)
-    plt.tight_layout()
-    fig.savefig(fnm)
-    # plt.savefig(fnm)
+    plt.subplots_adjust(left=0.16, bottom=0.12, right=0.94, top=0.91)
+    plt.savefig(fnm)
     plt.close()
 
 def get_equilibrium_values(forcefield):

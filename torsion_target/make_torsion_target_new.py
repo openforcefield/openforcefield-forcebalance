@@ -155,7 +155,7 @@ def make_torsiondrive_target(dataset_name, torsiondrive_data, test_ff=None):
         with open('note.txt', 'w') as notefile:
             notefile.write(f'Target generated from dataset {dataset_name}, entry {entry_index}')
         # write input.mol2 file
-        qcjson_mol = qcmol.json_dict()
+        qcjson_mol = qcmol.dict(encoding='json')
         oemol = cmiles.utils.load_molecule(qcjson_mol)
         ofs.open(f'input.mol2')
         oechem.OEWriteMolecule(ofs, oemol)
@@ -164,18 +164,8 @@ def make_torsiondrive_target(dataset_name, torsiondrive_data, test_ff=None):
         success = True
         if test_ff != None:
             success, msg, molecule_labels = test_ff_mol2(test_ff, 'input.mol2')
-        if not success:
-            if not os.path.exists('../error_mol2s'):
-                os.mkdir('../error_mol2s')
-            shutil.move(f'input.mol2', f'../error_mol2s/{target_name}.mol2')
-            with open(f'../error_mol2s/{target_name}_error.txt', 'w') as notefile:
-                notefile.write(f'{dataset_name}\ntarget_name {target_name}\n')
-                notefile.write(f'entry {entry_index}\ntd_keywords {td_data["keywords"]}\n')
-                notefile.write(f'error message:\n{msg}')
-            # remove this folder
-            os.chdir('..')
-            shutil.rmtree(target_name)
-        else:
+        # check if the torsion scan contains one or more conformers forming strong internal H bonds
+        if success:
             # write conf.pdb file
             fbmol = Molecule(f'input.mol2')
             fbmol.write(f'conf.pdb')
@@ -197,6 +187,23 @@ def make_torsiondrive_target(dataset_name, torsiondrive_data, test_ff=None):
                 target_mol.qm_grads.append(td_data['final_gradients'][grid_id])
             target_mol.write('scan.xyz')
             target_mol.write('qdata.txt')
+
+            no_hbonds = check_Hbond(scan_fnm ='scan.xyz', top_fnm='input.mol2')
+            if not no_hbonds:
+                success = False
+                msg = 'One or more internal H bonds exist.'
+        if not success:
+            if not os.path.exists('../error_mol2s'):
+                os.mkdir('../error_mol2s')
+            shutil.move(f'input.mol2', f'../error_mol2s/{target_name}.mol2')
+            with open(f'../error_mol2s/{target_name}_error.txt', 'w') as notefile:
+                notefile.write(f'{dataset_name}\ntarget_name {target_name}\n')
+                notefile.write(f'entry {entry_index}\ntd_keywords {td_data["keywords"]}\n')
+                notefile.write(f'error message:\n{msg}')
+            # remove this folder
+            os.chdir('..')
+            shutil.rmtree(target_name)
+        else:
             # pick metadata to write into the metadata.json file
             metadata = copy.deepcopy(td_data['keywords'])
             metadata['dataset_name'] = dataset_name
@@ -251,6 +258,17 @@ def test_ff_mol2(test_ff, mol2_fnm):
         return False, str(e), None
     return True, '', molecule_labels
 
+def check_Hbond(scan_fnm, top_fnm=None):
+    """
+    Check if the torsion scan contains conformers with internal hydrogen bonds
+    """
+    import mdtraj as md
+    traj = md.load(scan_fnm, top=top_fnm)
+    hbonds = md.baker_hubbard(traj)
+    if len(hbonds) == 0:
+        return True
+    else:
+        return False
 
 def main():
     import argparse

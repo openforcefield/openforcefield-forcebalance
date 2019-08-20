@@ -173,7 +173,7 @@ def make_vib_freq_target(dataset_name, hessian_data, test_ff=None):
         with open('note.txt', 'w') as notefile:
             notefile.write(f'Target generated from dataset {dataset_name}, entry {entry_index}')
         # write input.mol2 file
-        qcjson_mol = qcmol.json_dict()
+        qcjson_mol = qcmol.dict(encoding='json')
         oemol = cmiles.utils.load_molecule(qcjson_mol)
         ofs.open('input.mol2')
         oechem.OEWriteMolecule(ofs, oemol)

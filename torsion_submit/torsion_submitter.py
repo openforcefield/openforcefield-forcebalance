@@ -173,7 +173,7 @@ class TorsionSubmitter:
         # read mol file and get cmiles id
         m = read_sdf_to_fb_mol(filename)
         qc_mol = self.fb_molecule_to_qc_molecule(m)
-        mol_json = qc_mol.json_dict()
+        mol_json = qc_mol.dict(encoding='json')
         cmiles_id = m.Data.get('cmiles_id', {})
         # all options to be submitted
         all_job_options = []
@@ -223,7 +223,7 @@ class TorsionSubmitter:
         # read mol file and get cmiles id
         m = read_sdf_to_fb_mol(filename)
         qc_mol = self.fb_molecule_to_qc_molecule(m)
-        mol_json = qc_mol.json_dict()
+        mol_json = qc_mol.dict(encoding='json')
         cmiles_id = m.Data.get('cmiles_id', {})
         # all options to be submitted
         all_job_options = []

@@ -84,7 +84,7 @@ def get_int_fmt_string(n):
     return f"{{:0{count}d}}"
 
 def write_molecule_files(molecule, name, test_ff=None):
-    qcjson_mol = molecule.json_dict()
+    qcjson_mol = molecule.dict(encoding='json')
     oemol = cmiles.utils.load_molecule(qcjson_mol)
     # write the mol2 file and xyz file
     for ext in ['xyz', 'mol2']:

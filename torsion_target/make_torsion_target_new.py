@@ -7,6 +7,7 @@ import numpy as np
 import copy
 import json
 
+import mdtraj as md
 import cmiles
 from openeye import oechem
 import qcportal as ptl
@@ -155,7 +156,7 @@ def make_torsiondrive_target(dataset_name, torsiondrive_data, test_ff=None):
         with open('note.txt', 'w') as notefile:
             notefile.write(f'Target generated from dataset {dataset_name}, entry {entry_index}')
         # write input.mol2 file
-        qcjson_mol = qcmol.json_dict()
+        qcjson_mol = qcmol.dict(encoding='json')
         oemol = cmiles.utils.load_molecule(qcjson_mol)
         ofs.open(f'input.mol2')
         oechem.OEWriteMolecule(ofs, oemol)
@@ -197,25 +198,40 @@ def make_torsiondrive_target(dataset_name, torsiondrive_data, test_ff=None):
                 target_mol.qm_grads.append(td_data['final_gradients'][grid_id])
             target_mol.write('scan.xyz')
             target_mol.write('qdata.txt')
-            # pick metadata to write into the metadata.json file
-            metadata = copy.deepcopy(td_data['keywords'])
-            metadata['dataset_name'] = dataset_name
-            metadata['entry_label'] = entry_index
-            metadata['canonical_smiles'] = td_data['attributes'].get('canonical_smiles', 'unknown')
-            metadata['torsion_grid_ids'] = sorted_grid_ids
-            # find SMIRKs for torsion being scaned if test_ff is provided
-            if test_ff:
-                metadata['smirks'] = []
-                metadata['smirks_ids'] = []
-                for torsion_indices in td_data['keywords']['dihedrals']:
-                    param = molecule_labels['ProperTorsions'][tuple(torsion_indices)]
-                    metadata['smirks'].append(param.smirks)
-                    metadata['smirks_ids'].append(param.id)
-            with open('metadata.json', 'w') as jsonfile:
-                json.dump(metadata, jsonfile, indent=2)
-            # finish this target
-            target_names.append(target_name)
-            os.chdir('..')
+            # check if the torsion scan contains one or more conformers forming strong internal H bonds
+            no_hbonds, hbonds = screening_Hbond(mol2_fnm='input.mol2', scan_fnm ='scan.xyz')
+            if no_hbonds != True:
+                msg = 'One or more internal H bonds exist.'
+                if not os.path.exists('../error_mol2s'):
+                    os.mkdir('../error_mol2s')
+                shutil.move(f'input.mol2', f'../error_mol2s/{target_name}.mol2')
+                with open(f'../error_mol2s/{target_name}_error.txt', 'w') as notefile:
+                    notefile.write(f'{dataset_name}\ntarget_name {target_name}\n')
+                    notefile.write(f'entry {entry_index}\ntd_keywords {td_data["keywords"]}\n')
+                    notefile.write(f'error message:\n{msg}')
+                # remove this folder
+                os.chdir('..')
+                shutil.rmtree(target_name)
+            else:
+                # pick metadata to write into the metadata.json file
+                metadata = copy.deepcopy(td_data['keywords'])
+                metadata['dataset_name'] = dataset_name
+                metadata['entry_label'] = entry_index
+                metadata['canonical_smiles'] = td_data['attributes'].get('canonical_smiles', 'unknown')
+                metadata['torsion_grid_ids'] = sorted_grid_ids
+                # find SMIRKs for torsion being scaned if test_ff is provided
+                if test_ff:
+                    metadata['smirks'] = []
+                    metadata['smirks_ids'] = []
+                    for torsion_indices in td_data['keywords']['dihedrals']:
+                        param = molecule_labels['ProperTorsions'][tuple(torsion_indices)]
+                        metadata['smirks'].append(param.smirks)
+                        metadata['smirks_ids'].append(param.id)
+                with open('metadata.json', 'w') as jsonfile:
+                    json.dump(metadata, jsonfile, indent=2)
+                # finish this target
+                target_names.append(target_name)
+                os.chdir('..')
         target_idx += 1
 
     # write targets.{dataset_name}.in file
@@ -251,6 +267,13 @@ def test_ff_mol2(test_ff, mol2_fnm):
         return False, str(e), None
     return True, '', molecule_labels
 
+def screening_Hbond(mol2_fnm='input.mol2', scan_fnm ='scan.xyz'):
+    traj = md.load(scan_fnm, top=mol2_fnm)
+    hbonds = md.baker_hubbard(traj)
+    if len(hbonds) == 0:
+        return True, hbonds
+    else:
+        return False, hbonds
 
 def main():
     import argparse

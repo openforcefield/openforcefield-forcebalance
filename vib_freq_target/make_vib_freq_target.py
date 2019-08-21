@@ -137,7 +137,6 @@ coords conf.pdb
 mol2 input.mol2
 weight 1.0
 wavenumber_tol 200.0
-reassign_modes overlap
 remote 1
 $end
 '''

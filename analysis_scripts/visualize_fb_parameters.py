@@ -115,7 +115,7 @@ def plot_paramters(param_list):
         plt.ylim(y_pos[0]-1, y_pos[-1]+1)
         # adjust the x range
         final_values = initial_values + value_changes
-        xmin = min(initial_values.min(), final_values.min())
+        xmin = min(initial_values.min(), final_values.min(), 0)
         xmax = max(initial_values.max(), final_values.max())
         if prior_value is not None:
             xmax = max(xmax, prior_value)

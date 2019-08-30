@@ -83,3 +83,7 @@ with open('README.txt', 'w') as fnote:
 print("All validation tools created successfully")
 
 os.chdir('..')
+
+# generate "requirements.txt" file
+with open('requirements.txt', 'w') as fp:
+    subprocess.run(['conda', 'list'], stdout=fp, check=True)

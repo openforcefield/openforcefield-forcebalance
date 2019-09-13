@@ -196,7 +196,7 @@ def compute_smirnoff_assignments(forcefield, mol2_fnm):
         res['ImproperTorsions'][atom_indices] = (imp_torsion_param.id, imp_torsion_param.smirks)
     return res
 
-def generate_analysis_plots(data_qm_v_mm, orig_equilibrium, new_equilibrium, iter_folder):
+def generate_analysis_plots(data_qm_v_mm, orig_equilibrium, new_equilibrium, iter_folder, as_png=False):
     folder = 'optgeo_scatter_plots'
     if os.path.exists(folder):
         shutil.rmtree(folder)
@@ -215,13 +215,14 @@ def generate_analysis_plots(data_qm_v_mm, orig_equilibrium, new_equilibrium, ite
                 mm_array_iter0 = [d['mm_iter0'] for d in dlist] if dlist[0]['mm_iter0'] != None else None
                 smirks = dlist[0]['smirks']
                 title = f"<{fftype}> {sid} [n={len(dlist)}]\n{smirks}"
-                plot_qm_mm_scatter(qm_array, mm_array, f"{sid}.pdf", scatter_label=iter_folder, mm_array_iter0=mm_array_iter0, title=title,
+                plot_fnm = f"{sid}.png" if as_png else f"{sid}.pdf"
+                plot_qm_mm_scatter(qm_array, mm_array, plot_fnm, scatter_label=iter_folder, mm_array_iter0=mm_array_iter0, title=title,
                     orig_equil=orig_equilibrium.get(sid), new_equil=new_equilibrium.get(sid))
         os.chdir('..')
     os.chdir('..')
 
 def plot_qm_mm_scatter(qm_array, mm_array, fnm, scatter_label=None, mm_array_iter0=None, title="", orig_equil=None, new_equil=None):
-    plt.figure(figsize=(5,5))
+    plt.figure(figsize=(5,5), dpi=300)
     if mm_array_iter0 != None:
         plt.scatter(mm_array_iter0, qm_array, marker='x', color='C1', alpha=0.5, label='iter_0')
     else:
@@ -274,6 +275,7 @@ def main():
     parser.add_argument('-t', '--targets_folder', default='targets')
     parser.add_argument('-l', '--load_pickle', help='Load data directly from pickle file')
     parser.add_argument('-j', '--assignment_json', help='Load smirnoff assignments from json file')
+    parser.add_argument('-p', '--png', action='store_true', help='Save scatter plots as PNG file, useful for large number of data points.')
 
     args = parser.parse_args()
 
@@ -314,7 +316,7 @@ def main():
 
     # generate plots
     print("Generating plots")
-    generate_analysis_plots(data_qm_v_mm, orig_equilibrium, new_equilibrium, iter_folder)
+    generate_analysis_plots(data_qm_v_mm, orig_equilibrium, new_equilibrium, iter_folder, as_png=args.png)
 
 if __name__ == '__main__':
     main()

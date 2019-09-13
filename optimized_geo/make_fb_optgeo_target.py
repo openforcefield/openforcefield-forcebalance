@@ -62,16 +62,26 @@ def load_final_molecules(dataset_name):
     # query all opt records at the same time
     optRecord_ids = list(map_optRecordId_mIndex.keys())
     final_molecules_ids_map = {}
-    for optRecord in client.query_procedures(id=optRecord_ids):
-        m_index = map_optRecordId_mIndex[optRecord.id]
-        if optRecord.final_molecule:
-            final_molecules_ids_map[optRecord.final_molecule] = m_index
+    # query procedures by chunks
+    chunk_size = 1000
+    n_chunks = int((len(optRecord_ids)+chunk_size-1) / chunk_size)
+    for i_chunk in range(n_chunks):
+        chunk_record_ids = optRecord_ids[i_chunk * chunk_size: (i_chunk+1)*chunk_size]
+        for optRecord in client.query_procedures(id=chunk_record_ids):
+            m_index = map_optRecordId_mIndex[optRecord.id]
+            if optRecord.final_molecule:
+                final_molecules_ids_map[optRecord.final_molecule] = m_index
     # query all final molecules
     final_molecules = {}
     final_molecule_ids = list(final_molecules_ids_map.keys())
-    for molecule in client.query_molecules(final_molecule_ids):
-        m_index = final_molecules_ids_map[molecule.id]
-        final_molecules[m_index] = molecule
+    print(f"Found {len(final_molecule_ids)} final_molecule_ids")
+    # load by chunks of 1000 (limit on server)
+    n_chunks = int((len(final_molecule_ids)+chunk_size-1) / chunk_size)
+    for i_chunk in range(n_chunks):
+        chunk_molecule_ids = final_molecule_ids[i_chunk * chunk_size: (i_chunk+1)*chunk_size]
+        for molecule in client.query_molecules(chunk_molecule_ids):
+            m_index = final_molecules_ids_map[molecule.id]
+            final_molecules[m_index] = molecule
     print(f"Loaded {len(final_molecules)} final molecules")
     return final_molecules
 
@@ -145,7 +155,7 @@ def make_optgeo_target(dataset_name, size=None, test_ff_fnm=None):
     # create the ff for testing
     if test_ff_fnm != None:
         from openforcefield.typing.engines.smirnoff import ForceField
-        test_ff = ForceField(test_ff_fnm)
+        test_ff = ForceField(test_ff_fnm, allow_cosmetic_attributes=True)
     else:
         test_ff = None
     n_molecules = len(final_molecules)

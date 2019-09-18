@@ -1,4 +1,5 @@
 import os
+import json
 
 def find_unique_smiles(targets_folder):
     unique_smiles = {}
@@ -23,11 +24,10 @@ def find_unique_smiles(targets_folder):
                     unique_smiles[sm] = p
         elif fol.startswith('td_'):
             # parse all smiles from each torsionprofile target
-            with open(os.path.join(p, 'note.txt')) as f:
-                for line in f:
-                    label = line.rsplit(maxsplit=1)[-1]
-                    sm = label.replace(':1','').replace(':2','').replace(':3','').replace(':4','')
-                    unique_smiles[sm] = p
+            with open(os.path.join(p, 'metadata.json')) as f:
+                d = json.load(f)
+                sm = d['canonical_smiles']
+                unique_smiles[sm] = p
     return unique_smiles
 
 

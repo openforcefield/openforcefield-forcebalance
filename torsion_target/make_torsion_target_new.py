@@ -209,6 +209,7 @@ def make_torsiondrive_target(dataset_name, torsiondrive_data, test_ff=None):
             metadata['dataset_name'] = dataset_name
             metadata['entry_label'] = entry_index
             metadata['canonical_smiles'] = td_data['attributes'].get('canonical_smiles', 'unknown')
+            metadata['attributes'] = td_data['attributes']
             metadata['torsion_grid_ids'] = sorted_grid_ids
             # find SMIRKs for torsion being scaned if test_ff is provided
             if test_ff:

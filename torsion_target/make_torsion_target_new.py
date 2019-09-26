@@ -287,7 +287,7 @@ def main():
         torsiondrive_data = download_torsiondrive_data(args.dataset)
 
     # require the test_ff for metadata
-    test_ff = ForceField(args.test_ff_fnm)
+    test_ff = ForceField(args.test_ff_fnm, allow_cosmetic_attributes=True)
     make_torsiondrive_target(args.dataset, torsiondrive_data, test_ff=test_ff)
 
 if __name__ == '__main__':

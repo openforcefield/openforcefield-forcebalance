@@ -2,6 +2,8 @@
 
 import os
 import shutil
+import pickle
+
 import cmiles
 from openeye import oechem
 import qcportal as ptl
@@ -83,6 +85,9 @@ def load_final_molecules(dataset_name):
             m_index = final_molecules_ids_map[molecule.id]
             final_molecules[m_index] = molecule
     print(f"Loaded {len(final_molecules)} final molecules")
+    # save as pickle file
+    with open('final_molecules.pickle', 'wb') as pfile:
+        pickle.dump(final_molecules, pfile)
     return final_molecules
 
 def get_int_fmt_string(n):
@@ -150,8 +155,7 @@ def check_connectivity(filename):
     #     new_bonds.add(bond)
     return orig_bonds == new_bonds
 
-def make_optgeo_target(dataset_name, size=None, test_ff_fnm=None):
-    final_molecules = load_final_molecules(dataset_name)
+def make_optgeo_target(dataset_name, final_molecules, size=None, test_ff_fnm=None):
     # create the ff for testing
     if test_ff_fnm != None:
         from openforcefield.typing.engines.smirnoff import ForceField
@@ -241,11 +245,18 @@ def main():
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("dataset", help='Name of the OptimizationDataset on QCFractal')
+    parser.add_argument("-l", "--load_pickle", help='Load downloaded torsiondrive data from pickle file')
     parser.add_argument("-s", "--size", default=50, type=int, help="Size of each target, equal to number of optimized geometries in each target")
     parser.add_argument("-t", "--test_ff_fnm", help="Provide an offxml for testing the molecules created, skip the ones that failed")
     args = parser.parse_args()
 
-    make_optgeo_target(args.dataset, size=args.size, test_ff_fnm=args.test_ff_fnm)
+    if args.load_pickle:
+        with open(args.load_pickle, 'rb') as pfile:
+            final_molecules = pickle.load(pfile)
+    else:
+        final_molecules = load_final_molecules(args.dataset)
+
+    make_optgeo_target(args.dataset, final_molecules, size=args.size, test_ff_fnm=args.test_ff_fnm)
 
 if __name__ == '__main__':
     main()

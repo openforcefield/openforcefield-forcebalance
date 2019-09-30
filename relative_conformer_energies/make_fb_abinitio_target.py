@@ -134,7 +134,7 @@ def make_abinitio_targets(dataset_name, final_molecule_data, test_ff_fnm=None):
         #  create one target for each molecule
         molecule_conformer_data = {l: final_molecule_data[l] for l in conformer_entry_labels}
         target_name = 'abinitio_' + dataset_name.replace(' ', '_') + '-' + idx_fmt_string.format(i_target)
-        success = create_one_abinitio_target(target_name, molecule_conformer_data)
+        success = create_one_abinitio_target(target_name, molecule_conformer_data, test_ff=test_ff)
         if success:
             n_success += 1
             target_names.append(target_name)
@@ -183,8 +183,8 @@ def create_one_abinitio_target(target_name, molecule_conformer_data, test_ff=Non
             fnotes.write(f'{conformer_label}: molecule_id {m.id} | SUCCESS\n')
         else:
             fnotes.write(f'{conformer_label}: molecule_id {m.id} | ERROR: {err_msg}\n')
-    if len(molecule_data_list) < 2:
-        fnotes.write("Remaining conformers < 2 after filerting, skipping this target\n")
+    if len(molecule_data_list) < 3:
+        fnotes.write("Remaining conformers < 3 after filerting, skipping this target\n")
         success = False
     if success:
         # write files for remaining molecules
@@ -209,7 +209,8 @@ def check_molecule(molecule, test_ff=None):
         oechem.OEWriteMolecule(ofs, oemol)
         ofs.close()
         # test if bonds changed
-        if not check_connectivity('test.mol2'):
+        bond_set = {(a,b) for a,b,v in molecule.connectivity}
+        if not check_connectivity(bond_set, 'test.mol2'):
             success = False
             err_msg = "Bonds changed after rebuild"
         # test if can be created by the test_ff
@@ -217,7 +218,7 @@ def check_molecule(molecule, test_ff=None):
             from openforcefield.topology import Molecule as Off_Molecule
             from openforcefield.topology import Topology as Off_Topology
             try:
-                off_molecule = Off_Molecule.from_file(f'{name}.mol2')
+                off_molecule = Off_Molecule.from_file('test.mol2')
                 off_topology = Off_Topology.from_molecules(off_molecule)
                 test_ff.create_openmm_system(off_topology)
             except Exception as e:
@@ -231,22 +232,15 @@ def check_molecule(molecule, test_ff=None):
     os.chdir(cwd)
     return success, err_msg
 
-def check_connectivity(filename):
+def check_connectivity(bond_set, filename):
     """ Check if the connectivity in the molecule file is consistent with geometry
     Using force balance Molecule.build_bonds() for this first draft
     This can be improved by OpenEye or other methods
     """
     fbmol = Molecule(filename)
-    orig_bonds = set(fbmol.bonds)
-    # for b1, b2 in fbmol.bonds:
-    #     bond = (b1, b2) if b1 < b2 else (b2, b1)
-    #     orig_bonds.add(bond)
     fbmol.build_bonds()
     new_bonds = set(fbmol.bonds)
-    # for b1, b2 in fbmol.bonds:
-    #     bond = (b1, b2) if b1 < b2 else (b2, b1)
-    #     new_bonds.add(bond)
-    return orig_bonds == new_bonds
+    return bond_set == new_bonds
 
 def check_hbond(mol2_fnm):
     import mdtraj as md

@@ -109,7 +109,8 @@ def write_molecule_files(molecule, name, test_ff=None):
     success = True
     err_msg = ""
     # test if bonds changed
-    if not check_connectivity(f'{name}.mol2'):
+    bond_set = {(a,b) for a,b,v in molecule.connectivity}
+    if not check_connectivity(bond_set, f'{name}.mol2'):
         success = False
         err_msg = "Bonds changed after rebuild"
         if not os.path.exists('../err_bonds_changed'):
@@ -138,22 +139,15 @@ def write_molecule_files(molecule, name, test_ff=None):
         fbmol.write(f'{name}.pdb')
     return success, err_msg
 
-def check_connectivity(filename):
+def check_connectivity(bond_set, filename):
     """ Check if the connectivity in the molecule file is consistent with geometry
     Using force balance Molecule.build_bonds() for this first draft
     This can be improved by OpenEye or other methods
     """
     fbmol = Molecule(filename)
-    orig_bonds = set(fbmol.bonds)
-    # for b1, b2 in fbmol.bonds:
-    #     bond = (b1, b2) if b1 < b2 else (b2, b1)
-    #     orig_bonds.add(bond)
     fbmol.build_bonds()
     new_bonds = set(fbmol.bonds)
-    # for b1, b2 in fbmol.bonds:
-    #     bond = (b1, b2) if b1 < b2 else (b2, b1)
-    #     new_bonds.add(bond)
-    return orig_bonds == new_bonds
+    return bond_set == new_bonds
 
 def make_optgeo_target(dataset_name, final_molecules, size=None, test_ff_fnm=None):
     # create the ff for testing

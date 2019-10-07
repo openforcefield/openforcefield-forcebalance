@@ -40,70 +40,70 @@ def read_pickle_data(fnm):
         data_qm_v_mm = data_save['data_qm_v_mm']
     return data_qm_v_mm
 
-def compute_rmsd(ref_data_list, target_data_list):
+def compute_rmse(ref_data_list, target_data_list):
     a = np.array(ref_data_list)
     b = np.array(target_data_list)
-    rmsd = np.sqrt(np.sum((a-b)**2) / len(a))
-    return rmsd
+    rmse = np.sqrt(np.sum((a-b)**2) / len(a))
+    return rmse
 
-def aggregate_compare_rmsd_data(orig_data, new_data):
+def aggregate_compare_rmse_data(orig_data, new_data):
     agg_data = {}
     for fftype in orig_data:
         agg_data[fftype] = []
         for sid in sorted(orig_data[fftype], key=lambda s: int(s[1:] if s[-1].isdigit() else s[1:-1])):
-            # aggregate orig and new rmsd data into lists
+            # aggregate orig and new rmse data into lists
             qm_list = [d['qm'] for d in orig_data[fftype][sid]]
             mm_orig_list = [d['mm'] for d in orig_data[fftype][sid]]
             mm_new_list = [d['mm'] for d in new_data[fftype][sid]]
-            orig_rmsd = compute_rmsd(qm_list, mm_orig_list)
-            new_rmsd = compute_rmsd(qm_list, mm_new_list)
+            orig_rmse = compute_rmse(qm_list, mm_orig_list)
+            new_rmse = compute_rmse(qm_list, mm_new_list)
             agg_data[fftype].append({
                 'sid': sid,
-                'orig_rmsd': orig_rmsd,
-                'new_rmsd': new_rmsd,
+                'orig_rmse': orig_rmse,
+                'new_rmse': new_rmse,
             })
     return agg_data
 
-def plot_compare_rmsd_smirks(agg_data, fnm='compare_optgeo_rmsd.pdf'):
+def plot_compare_rmse_smirks(agg_data, fnm='compare_optgeo_rmse.pdf'):
     """ Generate bar plots for comparing benchmark results """
     xlabels = {
-        'bonds': 'Bond Length RMSD (Angstrom)',
-        'angles': 'Bond Angles RMSD (Degrees)',
-        'propertorsions': 'Torsion Angles RMSD (Degrees)',
-        'impropertorsions': 'Improper Torsion Angles RMSD (Degrees)'
+        'bonds': 'Bond Length RMSE (Angstrom)',
+        'angles': 'Bond Angles RMSE (Degrees)',
+        'propertorsions': 'Torsion Angles RMSE (Degrees)',
+        'impropertorsions': 'Improper Torsion Angles RMSE (Degrees)'
     }
     with PdfPages(fnm) as pdf:
         for fftype, sid_data_list in agg_data.items():
             sid_list = [d['sid'] for d in sid_data_list]
-            orig_rmsd_array = np.array([d['orig_rmsd'] for d in sid_data_list])
-            new_rmsd_array = np.array([d['new_rmsd'] for d in sid_data_list])
-            rmsd_changes = new_rmsd_array - orig_rmsd_array
+            orig_rmse_array = np.array([d['orig_rmse'] for d in sid_data_list])
+            new_rmse_array = np.array([d['new_rmse'] for d in sid_data_list])
+            rmse_changes = new_rmse_array - orig_rmse_array
             # make plot
             n = len(sid_list)
             y_pos = np.arange(n)
             plt.figure(figsize=(8.5, n*0.12+1.2))
-            # plot the initial rmsd
-            plt.barh(y_pos, orig_rmsd_array, tick_label=sid_list, height=0.8, color='C0', align='center')
+            # plot the initial rmse
+            plt.barh(y_pos, orig_rmse_array, tick_label=sid_list, height=0.8, color='C0', align='center')
             # plot the changes in different colors
-            increase_idxs = np.nonzero(rmsd_changes >=0)[0]
-            decrease_idxs = np.nonzero(rmsd_changes <0)[0]
-            plt.barh(y_pos[increase_idxs], rmsd_changes[increase_idxs], left=orig_rmsd_array[increase_idxs], height=0.6, color='C3', align='center')
-            plt.barh(y_pos[decrease_idxs], rmsd_changes[decrease_idxs], left=orig_rmsd_array[decrease_idxs], height=0.6, color='C2', align='center')
+            increase_idxs = np.nonzero(rmse_changes >=0)[0]
+            decrease_idxs = np.nonzero(rmse_changes <0)[0]
+            plt.barh(y_pos[increase_idxs], rmse_changes[increase_idxs], left=orig_rmse_array[increase_idxs], height=0.6, color='C3', align='center')
+            plt.barh(y_pos[decrease_idxs], rmse_changes[decrease_idxs], left=orig_rmse_array[decrease_idxs], height=0.6, color='C2', align='center')
             # adjust the y range, and invert the yaxis
             #plt.ylim(y_pos[0]-1, y_pos[-1]+1)
             plt.ylim(y_pos[-1]+1, y_pos[0]-1)
             # adjust the x range
             xmin = 0
-            xmax = max(orig_rmsd_array.max(), new_rmsd_array.max())
+            xmax = max(orig_rmse_array.max(), new_rmse_array.max())
             padding = (xmax - xmin) * 0.01
             plt.xlim(xmin, xmax+padding)
             plt.xlabel(xlabels[fftype.lower()])
             # save
-            plt.title(f'RMSD comparison for {fftype}')
+            plt.title(f'RMSE comparison for {fftype}')
             plt.tight_layout()
             pdf.savefig()  # saves the current figure into a pdf page
             plt.close()
-    print(f"RMSD compare plots saved as {fnm}")
+    print(f"RMSE compare plots saved as {fnm}")
 
 def main():
     import argparse
@@ -115,9 +115,9 @@ def main():
     orig_data = read_pickle_data(args.orig_data_pickle)
     new_data = read_pickle_data(args.new_data_pickle)
 
-    agg_data = aggregate_compare_rmsd_data(orig_data, new_data)
+    agg_data = aggregate_compare_rmse_data(orig_data, new_data)
 
-    plot_compare_rmsd_smirks(agg_data)
+    plot_compare_rmse_smirks(agg_data)
 
 if __name__ == "__main__":
     main()

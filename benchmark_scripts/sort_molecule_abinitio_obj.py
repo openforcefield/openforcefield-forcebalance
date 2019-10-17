@@ -12,9 +12,6 @@ def read_abinitio_EnergyCompare(tmp_folder):
             qme = data[:,0]
             mme = data[:,1]
             delta = data[:,2]
-            # how to combine delta values?
-            # in fb cal, how do they calculate 'percent difference'
-            # sum of absolute delta?
             avg_delta = np.mean(abs(np.array(delta)))
             dic[fol] = avg_delta
     return dic
@@ -54,7 +51,6 @@ def sort_print_obj_table(molecule_obj_dict, mol_info):
 
 def main():
     import argparse
-    import pickle
     parser = argparse.ArgumentParser()
     parser.add_argument('-t', '--targets_folder', default='targets')
     parser.add_argument('-tmp', '--tmp_folder')
@@ -63,8 +59,6 @@ def main():
     mol_info = read_abinitio_notes(args.targets_folder)
     molecule_obj_dict = read_abinitio_EnergyCompare(args.tmp_folder)
     sort_print_obj_table(molecule_obj_dict, mol_info)
-    # with open('abinitio_target_mol_info.p', 'wb') as pfile:
-    #     pickle.dump(dic, pfile)
 
 if __name__=='__main__':
     main()

@@ -1,6 +1,7 @@
 # OpenFF ForceBalance Fitting Tutorial
 
-**Note**: In the release assets, you can find `release_XX.tar.gz` which contains fitting results and all codes used in the fitting procedure for the release and `Source code (tar.gz)` which is a compressed repository.
+**Note 1**: Please read the [setup guide](setup_guide.md) for the installation of ForceBalance and other packages. 
+**Note 2**: The fitting results are posted as [release packages](https://github.com/openforcefield/openforcefield-forcebalance/releases) in this repository. You can find `release_XX.tar.gz` which contains fitting results and all codes used in the fitting procedure for the release.
 
 ## Overview
 Fitting valence parameters to QM data can be performed in four steps. 

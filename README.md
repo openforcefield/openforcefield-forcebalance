@@ -18,7 +18,7 @@ Fitting valence parameters to QM data can be performed in four steps.
 ### 1. QM data submission 
 Quantum chemical calculations are performed on a distributed set of high-performance computing clusters using the MolSSI QCFractal distributed quantum chemistry engine, and stored as `DataSet` objects on the public MolSSI QCArchive server. 
 
-For release-1 fitting, two sets of molecules were used, each leads to three types of QM data generated: 1) Optimized geometries; 2) Vibrational frequencies; 3) Torsion profiles.  Thus there are 6 QM data sets in total used in the fitting of release-1 (Parsley). 
+For the release-1 "Parsley" parameter optimization, two sets of molecules were used, and each leads to three types of QM data being generated: 1) Optimized geometries; 2) Vibrational frequencies; 3) Torsion profiles.  Thus there are 6 QM data sets in total. 
 
 **Table 1**. Collection types and names of datasets of 6 QM data sets specified on QCArchive server.
 <center>
@@ -129,36 +129,61 @@ cd fb-fit
 #### 3.2. Prepare three input components for ForceBalance 
 Notice that all needed files are already provided in the release package under fb-fit/ folder. The following steps can be used to re-create these files.
 
-1) input force field 
-    Directory named forcefield. forcefield contains the force field files that you are optimizing. Parameters to be optimized are specified by ‘parameterize’ tag. For example, if we want to fit the force constant and the equilibrium bond length of b1 bond term, ‘parameterize=”k,length”’ tag should be added as shown below.
-    ```
-    <Bond smirks="[#6X4:1]-[#6X4:2]" length="1.526 * angstrom" k="620.0 * angstrom**-2 * mole**-1 * kilocalorie" id="b1" parameterize="k,length"/>
-    ```
+#### 3.2.1 Input force field 
 
-    You can get the directory directly from release.tar.gz and use it for the calculation. Or you can manually modify the input force field files as needed. When doing so, it is preferred to use the openforcefield toolkit for the modification of the file.
+The directory named `forcefield` contains the force field files that you are optimizing. Parameters to be optimized are specified by `parameterize` tags. 
+For example, if we want to fit the force constant and the equilibrium bond length of the bond term with string ID `b1`, the attribute `parameterize=”k,length”` should be added as shown below.
+```
+<Bond smirks="[#6X4:1]-[#6X4:2]" length="1.526 * angstrom" k="620.0 * angstrom**-2 * mole**-1 * kilocalorie" id="b1" parameterize="k,length"/>
+```
 
-2) targets
-    Directory named targets. targets contains all reference data as well as input files for simulating that data using the force field. Each subdirectory in targets corresponds to a single target, and its contents depends on the specific target type. Since the targets from the previous step can be directly used in ForceBalance fitting, we can copy and merge all the prepared files into one folder.
-    ```
-    cp -r ../make-target/*/targets .
-    ```
+You can get the directory directly from the release package and use it for the calculation, or you can manually modify the input force field files as needed. 
+When doing so, it is preferred to use the openforcefield toolkit for the modification of the file.
 
-3) input file
-    Input file contains global options and target options. Looking at the `optimize.in` provided in the release package under the `fb-fit/` folder as an example. 
+#### 3.2.2 Fitting targets
 
-    Global options are given in the $options section. jobtype, specifies the calculation type. To run force field optimization, set jobtype to ‘optimize’. To run single-point calculation, set jobtype to ‘single’. The provided `optimize.in` contains two global options wq_port, and asynchronous that specify the use of work_queue for distributed evaluations. Please refer to setup document if you are using Work Queue for the first time. If you intend to run a small fitting in serial, please remove these two options. 
+The directory named `targets` contains reference data sets as well as input files for simulating that data using the force field. 
+Each subdirectory in `targets` corresponds to a single "ForceBalance target" or data set, and its contents depends on the specific target type. 
+Since the targets from the previous step can be directly used in ForceBalance fitting, we can copy and merge all the prepared files into one folder.
+```
+cp -r ../make-target/*/targets .
+```
 
-    The settings for fitting targets are given as $target blocks, one for each target. The provided `optimize.in` contains a long list of such blocks. To reproduce these input blocks, you can clean upall of them from `optimize.in`, then append the updated input options by:
-    ```
-    cat targets/target*.in >> optimize.in
-    ```
+#### 3.2.3 Input file
 
-3.3. Run ForceBalance 
+The ForceBalance input file contains a "global options" section, starting with `$options`, that specifies global properties of the optimization.
+There are also "target options" section(s), starting with `$target`, which specify the settings of one or more ForceBalance targets.
+
+An example input file is provided as `optimize.in` in the release package under the `fb-fit/` folder. 
+
+Global options: 
+
+`jobtype`, specifies the calculation type. To run force field optimization, set jobtype to `optimize`. To run single-point calculation, set jobtype to `single`. 
+
+The provided `optimize.in` contains two global options `wq_port`, and `asynchronous` that specify the use of Work Queue for distributed target evaluations. 
+Please refer to the setup guide if you are using Work Queue for the first time. 
+If you intend to run small optimization jobs on your local machine, please remove these two options. 
+
+The settings for fitting targets are given as `$target` blocks, one for each target. 
+The provided `optimize.in` contains a long list of such blocks. 
+To reproduce these input blocks, you can clean upall of them from `optimize.in`, then append the updated input options by:
+```
+cat targets/target*.in >> optimize.in
+```
+
+#### 3.3. Run ForceBalance 
+
+The ForceBalance optimizer is executed on the command line as:
 ```
 ForceBalance optimize.in
 ```
-The output will be printed on the screen and also saved in the output file `optimize.out`. All fitting related temporary files containing the details are saved in the directory `optimize.tmp/`. Note that this folder is too large to be included in the release package. After the fitting is finished, the resulting forcefield file is saved in the `result/` folder.
+The executable is intended to be run in the foreground, allowing you to view outputs in real time. 
+The output will be printed on the screen and also saved in the output file `optimize.out`. 
+Although it is possible to run in the background, the recommended workflow is to run ForceBalance in an open terminal window or a virtual console, e.g. provided by the GNU Screen or tmux software packages.
 
+All fitting related temporary files containing the details are saved in the directory `optimize.tmp/`. 
+This folder is too large to be included in the release package. 
+After the fitting is finished, the resulting forcefield file is saved in the `result/` folder.
 
 ### 4. Analysis of ForceBalance optimization result
 Several scripts for visualization of fitting results can be found in `analysis_scripts/` directory. They help to get insights on ForceBalance output data. 
@@ -172,40 +197,49 @@ cd analysis
 ```
 
 #### 4.2. Visualize the change of parameters in fitting
-This reads ForceBalance output file and generates bar plots of parameter changes, with green color indicating increase in value and red for decrease in value. 
+In this step, we will read the ForceBalance output file to generate bar plots of parameter changes, with green and red colors indicating an increase/decrease in the parameter value respectively. 
 ```
 python ../openforcefield-forcebalance/analysis_scripts/visualize_fb_parameters.py ../fb-fit/optimize.out -x ../fb-fit/forcefield/param_valence.offxml 
 ```
 
-The result of this script is saved in a folder `param_change/`, with each type of parameter in one pdf file. The `all.pdf` is the combination of all.
+The result of this script is saved in a folder `param_change/`, with each type of parameter in one pdf file. 
+The `all.pdf` combines the parameter changes for all parameter types into a single file.
 
-#### 4.3. Visualize the improvements on optimized geometries
-To visualize the effect of fitting on optimized geometries, we run a script to read the QM and MM internal coordinate values for every molecule from ForceBalance optimize.tmp folder aggregates them by SMIRKs and draws scatter plots with initial and final equilibrium values labeled. Each dot corresponds to one internal coordinate in an optimized structure.
+#### 4.3. Visualizing optimization results for optimized geometries
+To visualize the effect of fitting on optimized geometries, we run a script to read the QM and MM internal coordinate values for every molecule from the `optimize.tmp` folder.
+The script aggregates the internal coordinate values according to their matching SMIRKS patterns from the force field file and draws scatter plots with initial and final values of the equilibrium parameter as vertical lines. 
+Each dot corresponds to one internal coordinate in an optimized structure.
 ```
 python ../openforcefield-forcebalance/analysis_scripts/plot_optgeo_each_smirks.py -x ../fb-fit/forcefield/param_valence.offxml --new_xml../fb-fit/result/optimize/param_valence.offxml -f ../fb-fit/optimize.tmp -t ../fb-fit/targets-j ../fb-fit/smirnoff_parameter_assignments.json
 ```
-This script will generate a folder `optgeo_scatter_plots/`, that contains subfolders like `Bonds/`. The pdf files in there correspond to the SMIRKS id, such as `b1.pdf`. This script will also save a pickle file `optgeo_analysis_data.p` on disk for re-using.
+This script will generate a folder `optgeo_scatter_plots/`, that contains subfolders like `Bonds/`. 
+The PDF files in each folder correspond to the SMIRKS id, such as `b1.pdf`. 
+This script will also save a pickle file `optgeo_analysis_data.p` on disk for quickly generating the plots without re-reading the data from `optimize.tmp`.
 
-#### 4.4. Visualize improvements in vibrational frequencies
-To visualize the effect of fitting on vibrational frequencies, a script was implemented to plot the bar chart of rmsd of QM and MM vibrational frequencies from the first iteration and the final iteration. 
+#### 4.4. Visualizing optimization results for vibrational frequencies
+To visualize the effect of fitting on vibrational frequencies, a script was implemented to plot the bar chart of RMSD of QM and MM vibrational frequencies from the zeroth optimization cycle (before any parameter changes) and the final optimization cycle. 
 ```
 python ../openforcefield-forcebalance/analysis_scripts/plot_vibfreq_rmsd.py -f ../fb-fit/optimize.tmp
 ```
 
-This script will generate a folder `vibfreq_targets_plots/` that contains two files, the `vib_freq_rmsd.pdf` and `vib_freq_maxdiff.pdf`. A pickle file `vibfreq_plot_data.pickle` is also saved for re-using the loaded data when making new plots.
+This script will generate a folder `vibfreq_targets_plots/` that contains two files, the `vib_freq_rmsd.pdf` and `vib_freq_maxdiff.pdf`. 
+A pickle file `vibfreq_plot_data.pickle` is also saved for re-using the loaded data when making new plots.
 
-#### 4.5. Improvements in torsion profiles
-To visualize the improvements on torsion profiles, we use a script to load data from `optimize.tmp/` directory and generate plots for QM vs MM energies along torsion scans, including the MM energies from the first iteration for the comparison. A table of metadata is also included in the plots. Then it aggregates the plots into subfolders by ID of their SMIRKS.
+#### 4.5. Visualizing optimization results for torsion profiles
+We use a script to load data from `optimize.tmp/` directory and generate QM and MM energy profiles as a function of the the torsion angle, including the MM energies from both the zeroth cycle (before any parameter changes) and the final optimization cycle for comparison. 
+A table of metadata is also included in each plot. 
+Plot files are organized into subfolders by the ID of the matching SMIRKS pattern.
 ```
 python ../openforcefield-forcebalance/analysis_scripts/plot_td_energies.py -f ../fb-fit/optimize.tmp -t ../fb-fit/targets
 ```
 
-This script will generate a folder `td_targets_plots/` that contains subfolders correspond to each SMIRKs torsion term. Each pdf file has the same name as the corresponding torsion profile target such as `td_OpenFF_Group1_Torsions_193_C11H18N2.pdf`.
+This script will generate a folder `td_targets_plots/` that contains subfolders corresponding to each SMIRKs torsion term. 
+Each PDF file has the same name as the corresponding torsion profile target such as `td_OpenFF_Group1_Torsions_193_C11H18N2.pdf`.
 The log of running all above analysis scripts is saved in the release package as `analysis/run_analysis.log`.
 
-
 ## End
-Congratulations! Now you have completed the full fitting tutorial. Please make sure you read the blog post for the theory and ideas behind this fitting.
+Congratulations! Now you have completed the full fitting tutorial. 
+Please make sure you read the [blog post](https://openforcefield.org/news/introducing-openforcefield-1.0/#fitting-parsley-to-quantum-chemical-data) for the theory and ideas behind this optimization.
 
-For questions about this tutorial and details on the fitting releases, please contact.
-For questions regarding ForceBalance, please contact Hyesu Jang, Yudong Qiu or Lee-Ping Wang. We are also planning to rewrite the ForceBalance document with updated instructions and more detailed explanations.
+For questions about this tutorial, details on the fitting releases, or ForceBalance, please contact Hyesu Jang, Yudong Qiu, or Lee-Ping Wang.
+We are also planning to rewrite the ForceBalance documentation with updated instructions and more detailed explanations.

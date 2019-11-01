@@ -3,15 +3,18 @@
 ### **Step 1.** Install Anaconda or Miniconda with Python 3.
 
 ### **Step 2.** Create a new Conda environment containing all of the required packages.
-First, navigate to a folder and clone the repository as:
+First, navigate to a folder and clone this repository as:
+
+```
 git clone https://github.com/openforcefield/openforcefield-forcebalance.git
+```
 
 Next, create a new environment for all of the packages used in the optimization.
 The provided `environment-exact.yml` file will create an environment named `parsley`
 with package versions taken from the time of this writing (Nov 1, 2019).
 This is recommended if you want to reproduce the results in the force field release.
 If you would rather install the latest versions of most packages except for the most
-crucial ones, you may use a simplified `enivonrment-simple.yml` file instead.
+crucial ones, you may use a simplified `environment-simple.yml` file instead.
 
 ```
 conda env create -f devtools/environment-exact.yml

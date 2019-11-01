@@ -1,53 +1,69 @@
 ## Setup guide for force field optimization 
 
-### **Step 1.** Install Anaconda or Miniconda with Python 3 and create a new conda environment.
+### **Step 1.** Install Anaconda or Miniconda with Python 3.
+
+### **Step 2.** Create a new Conda environment containing all of the required packages.
+First, navigate to a folder and clone the repository as:
+git clone https://github.com/openforcefield/openforcefield-forcebalance.git
+
+Next, create a new environment for all of the packages used in the optimization.
+The provided `environment-exact.yml` file will create an environment named `parsley`
+with package versions taken from the time of this writing (Nov 1, 2019).
+This is recommended if you want to reproduce the results in the force field release.
+If you would rather install the latest versions of most packages except for the most
+crucial ones, you may use a simplified `enivonrment-simple.yml` file instead.
+
 ```
-conda create -n openff
-conda activate openff
+conda env create -f devtools/environment-exact.yml
+ - or -
+conda env create -f devtools/environment-simple.yml
 ```
 
-### **Step 2.** Install packages using the Conda package manager.
+Next, activate the environment as:
+```
+conda activate parsley
+```
+
+** Notes: **
+
+* The Open Force Field Toolkit `openforcefield` version 0.4.1 was used in the release-1 parameter optimization.
+* The ForceBalance software used in this optimization is a development version, commit starting with `5b3a65d`. We are working on making a new release that reproduces the results.
+* The OpenEye toolkit requires a valid license. 
+* QCPortal version 0.11 was used in the release package, but we install a more recent here because that is required for connecting to the public server.
+* The environment.yml files are equivalent to running the following commands:
 ```
 conda install -c conda-forge notebook matplotlib qcportal geometric 
 conda install -c openeye openeye-toolkits
 conda install -c omnia -c conda-forge forcebalance openforcefield=0.4.1 cmiles
-```
-* Open Forcefield Toolkit version 0.4.1 was used in release-1 fitting.
-* The OpenEye toolkit requires a valid license. 
-* QCPortal version 0.11 was used in the release package, but we install the latest version here because that is required for connecting to the public server.
-
-
-### **Step 3.** Install development version of ForceBalance from source. (Pending the new release of ForceBalance, this step will be removed)
-```
+# ForceBalance installation
 conda install numpy scipy networkx lxml
 conda install -c omnia pymbar
 git clone https://github.com/leeping/forcebalance.git
-python setup.py install
-```
-**Note**: If you want to reproduce the fitting, you need to get the same version of source code used for the fitting. The release-1-RC2 used the version commited in August 14th, so to use the same version,  you need to checkout and reinstall with this commands: 
-```
 git checkout 5b3a65d
 python setup.py install
 ```
-`5b3a65d` is the first 7 characters for the commit.
- 
-### (Optional) **Step 4.** Install and usage of Work Queue from CCTools 
-#### 4.1. Installation of Work Queue
+
+### (Optional) **Step 3.** Install and usage of Work Queue from CCTools 
+#### 3.1. Installation of Work Queue
 ForceBalance provides an option to use Work Queue for distributed calculations.
 Work Queue is a distributed computing library that is developed by the [Cooperative Computing Lab](http://ccl.cse.nd.edu/) at Notre Dame; its documentation can be found [here](http://ccl.cse.nd.edu/software/manuals/workqueue.html). 
 
 Here’s a brief introduction of Work Queue extracted from the linked manual:
 ```
-“...Work queue is a framework for building large scale master-worker applications. Using the Work Queue library, you create a custom master program that defines and submits a large number of small tasks. Each task is distributed to a remote worker process which executes it and returns the results. As results are created, the master may generate more tasks to be executed...”
+“...Work queue is a framework for building large scale master-worker applications.
+Using the Work Queue library, you create a custom master program that defines and
+submits a large number of small tasks. Each task is distributed to a remote worker
+process which executes it and returns the results. As results are created, the
+master may generate more tasks to be executed...”
 ```
 
 A handy bash script written for an automatic compilation of CCTools can be found [here](https://github.com/lpwgroup/torsiondrive/blob/master/devtools/travis-ci/install-cctools.sh). This script will download, compile, and install the executables to `$HOME/opt/cctools/`, and also install the Python binding into your current Python environment. To use this script:
 ```
-wget https://github.com/lpwgroup/torsiondrive/blob/master/devtools/travis-ci/install-cctools.sh
+wget https://raw.githubusercontent.com/lpwgroup/torsiondrive/master/devtools/travis-ci/install-cctools.sh
 bash install-cctools.sh
 ```
 
-#### 4.2. Brief introduction of how to use Work Queue in ForceBalance
+#### 3.2. Brief introduction of how to use Work Queue in ForceBalance
 (a) Run ForceBalance with the `work_queue` option and provide a port number. 
 In the input file (e.g. optimize.in) of ForceBalance, we have the following lines in the `$options` block:
 
@@ -85,12 +101,12 @@ If successfully connected, you will see your host ForceBalance program start pri
 ~/opt/cctools/bin/work_queue_status <host_address> <port number> -W
 ```
 
-#### 4.3. Troubleshooting common Work Queue issues
+#### 3.3. Troubleshooting common Work Queue issues
 
 Here we list the potential issues that may be encountered when running distributed ForceBalance calculations and how to resolve them. 
 We will continually add to this list over time.
 
-#### 4.3.1. Using SSH tunneling to work around firewalls for distributed computing
+#### 3.3.1. Using SSH tunneling to work around firewalls for distributed computing
 
 You may find that your distributed computing efforts are being stymied because your host machine (running the ForceBalance master) or the worker machines (running Work Queue workers) are not able to connect to each other.
 This may happen because the host machine and/or the worker machine are behind firewalls that disallow outgoing and/or incoming connections.

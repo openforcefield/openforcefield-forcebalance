@@ -3,10 +3,11 @@
 ### **Step 1.** Install Anaconda or Miniconda with Python 3.
 
 ### **Step 2.** Create a new Conda environment containing all of the required packages.
-First, navigate to a folder and clone this repository as:
+First, navigate to a folder, clone this repository and enter the repository folder as:
 
 ```
 git clone https://github.com/openforcefield/openforcefield-forcebalance.git
+cd openforcefield-forcebalance
 ```
 
 Next, create a new environment for all of the packages used in the optimization.

@@ -69,7 +69,7 @@ process which executes it and returns the results. As results are created, the
 master may generate more tasks to be executed...”
 ```
 
-A handy bash script written for an automatic compilation of CCTools can be found [here](https://github.com/lpwgroup/torsiondrive/blob/master/devtools/travis-ci/install-cctools.sh). This script will download, compile, and install the executables to `$HOME/opt/cctools/`, and also install the Python binding into your current Python environment. To use this script:
+A handy bash script written for an automatic compilation of CCTools can be found [here](https://github.com/lpwgroup/torsiondrive/blob/master/devtools/travis-ci/install-cctools.sh). This script will download, compile, and install the executables to `$HOME/opt/cctools/<version>` and create a symlink to `$HOME/opt/cctools/current`, and also install the Python binding into your current Python environment. To use this script:
 ```
 wget https://raw.githubusercontent.com/lpwgroup/torsiondrive/master/devtools/travis-ci/install-cctools.sh
 bash install-cctools.sh
@@ -103,14 +103,14 @@ On a remote machine, first repeat above steps 1-3 to create an identical environ
 Make sure that the correct environment variables are set, including the Conda environment.
 Start a worker process by running the following:
 ```
-~/opt/cctools/bin/work_queue_worker -t 800000 <host_address> <port number>
+~/opt/cctools/current/bin/work_queue_worker -t 800000 <host_address> <port number>
 ```
 
 The `<host_address>` can be IP address or host domain name of the host machine. The `<port number>` should be consistent with what you specified in the input file. `-t 800000` option tells the worker to not shut down when host connection is lost. To print all debug information you can add `-d all` to the command. 
 
 If successfully connected, you will see your host ForceBalance program start printing a non-zero number of workers connected. To monitor the currently connected workers, you can also use this command on the host machine:
 ```
-~/opt/cctools/bin/work_queue_status <host_address> <port number> -W
+~/opt/cctools/current/bin/work_queue_status <host_address> <port number> -W
 ```
 
 #### 3.3. Troubleshooting common Work Queue issues
@@ -152,7 +152,7 @@ __Step 3: Run Work Queue Worker__
 This allows your Work Queue workers to connect to your laptop, which is listening on port 9571, by directing the workers to connect to `localhost` port `9573` as follows:  
 
 ```
-~/opt/cctools/bin/work_queue_worker -t 800000 localhost 9573
+~/opt/cctools/current/bin/work_queue_worker -t 800000 localhost 9573
 ```
 
 You may put the SSH commands into your job submission script to automate parts of this process.

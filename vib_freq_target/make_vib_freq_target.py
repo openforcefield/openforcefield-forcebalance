@@ -79,7 +79,10 @@ def download_hessian_data(dataset_name):
     basis = spec_dict['basis']
     print(f"Specs for [ {dataset_name} ] loaded\n{spec_dict}")
     # download data for all molecules
-    dict_mol_id_entry_name = {rec.molecule_id: rec.name for rec in ds.data.records}
+
+    #TH FIX
+    dict_mol_id_entry_name = {row["molecule_id"]: row["name"] for index, row in ds.get_entries().iterrows()}
+    
     print(f"Found total {len(dict_mol_id_entry_name)} molecule entries")
     all_mol_ids = list(dict_mol_id_entry_name.keys())
     entry_molecule_dict = {}
@@ -327,7 +330,8 @@ def main():
     hessian_data = filter_hessian_data(hessian_data)
 
     # create a ForceField object for testing
-    test_ff = ForceField(args.test_ff_fnm)
+    #TH FIX
+    test_ff = ForceField(args.test_ff_fnm, allow_cosmetic_attributes=True)
     # step 3: generate one target for each data entry
     make_vib_freq_target(args.dataset, hessian_data, test_ff=test_ff)
 

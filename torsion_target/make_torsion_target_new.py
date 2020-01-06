@@ -95,14 +95,18 @@ def download_torsiondrive_data(dataset_name):
         entry_index, attributes = map_record_id_entry_index[td_record.id]
         print(f"{i:5d} : {entry_index:50s} status {td_record.status}")
         if td_record.status == 'COMPLETE':
-            torsiondrive_data[entry_index] = {
-                'initial_molecules': client.query_molecules(td_record.initial_molecule),
-                'final_molecules': td_record.get_final_molecules(),
-                'final_energies': td_record.get_final_energies(),
-                'final_gradients': {gid: np.array(res.return_result) for gid, res in td_record.get_final_results().items()},
-                'keywords': td_record.keywords.dict(),
-                'attributes': attributes,
-            }
+            # TH FIX
+            try :
+                torsiondrive_data[entry_index] = {
+                    'initial_molecules': client.query_molecules(td_record.initial_molecule),
+                    'final_molecules': td_record.get_final_molecules(),
+                    'final_energies': td_record.get_final_energies(),
+                    'final_gradients': {gid: np.array(res.return_result) for gid, res in td_record.get_final_results().items()},
+                    'keywords': td_record.keywords.dict(),
+                    'attributes': attributes,
+                }
+            except:
+                continue
     print(f'Downloaded torsion drive data for {len(torsiondrive_data)} completed entries')
     # save as pickle file
     with open('torsiondrive_data.pickle', 'wb') as pfile:
@@ -166,32 +170,36 @@ def make_torsiondrive_target(dataset_name, torsiondrive_data, test_ff=None):
             success, msg, molecule_labels = test_ff_mol2(test_ff, 'input.mol2')
         # check if the torsion scan contains one or more conformers forming strong internal H bonds
         if success:
-            # write conf.pdb file
-            fbmol = Molecule(f'input.mol2')
-            fbmol.write(f'conf.pdb')
-            # list of grid ids sorted
-            sorted_grid_ids = sorted(td_data['final_molecules'].keys())
-            # write scan.xyz and qdata.txt files
-            target_mol = Molecule()
-            target_mol.elem = fbmol.elem
-            target_mol.xyzs = []
-            target_mol.qm_energies = []
-            target_mol.qm_grads = []
-            for grid_id in sorted_grid_ids:
-                grid_qc_mol = td_data['final_molecules'][grid_id]
-                # convert geometry unit Bohr -> Angstrom
-                geo = grid_qc_mol.geometry * 0.529177
-                target_mol.xyzs.append(geo)
-                # add energy and gradient
-                target_mol.qm_energies.append(td_data['final_energies'][grid_id])
-                target_mol.qm_grads.append(td_data['final_gradients'][grid_id])
-            target_mol.write('scan.xyz')
-            target_mol.write('qdata.txt')
+            #TH fix
+            try:
+                # write conf.pdb file
+                fbmol = Molecule(f'input.mol2')
+                fbmol.write(f'conf.pdb')
+                # list of grid ids sorted
+                sorted_grid_ids = sorted(td_data['final_molecules'].keys())
+                # write scan.xyz and qdata.txt files
+                target_mol = Molecule()
+                target_mol.elem = fbmol.elem
+                target_mol.xyzs = []
+                target_mol.qm_energies = []
+                target_mol.qm_grads = []
+                for grid_id in sorted_grid_ids:
+                    grid_qc_mol = td_data['final_molecules'][grid_id]
+                    # convert geometry unit Bohr -> Angstrom
+                    geo = grid_qc_mol.geometry * 0.529177
+                    target_mol.xyzs.append(geo)
+                    # add energy and gradient
+                    target_mol.qm_energies.append(td_data['final_energies'][grid_id])
+                    target_mol.qm_grads.append(td_data['final_gradients'][grid_id])
+                target_mol.write('scan.xyz')
+                target_mol.write('qdata.txt')
 
-            no_hbonds = check_Hbond(scan_fnm ='scan.xyz', top_fnm='input.mol2')
-            if not no_hbonds:
-                success = False
+                no_hbonds = check_Hbond(scan_fnm ='scan.xyz', top_fnm='input.mol2')
+                if not no_hbonds:
+                    success = False
                 msg = 'One or more internal H bonds exist.'
+            except:
+                success = False
         if not success:
             if not os.path.exists('../error_mol2s'):
                 os.mkdir('../error_mol2s')

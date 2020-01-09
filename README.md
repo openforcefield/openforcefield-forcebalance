@@ -23,11 +23,11 @@ For the release-1 "Parsley" parameter optimization, two sets of molecules were u
 **Table 1**. Collection types and names of datasets of 6 QM data sets specified on QCArchive server.
 <center>
 
-|                         |    Collection type    |    Name for "Roche set"   |  Name for "Coverage set"  |
-|-------------------------|:---------------------:|:-------------------------:|:-------------------------:|
-| Optimized geometries    |  OptimizationDataset  | OpenFF Optimization Set 1 |  SMIRNOFF Coverage Set 1  |
-| Vibrational frequencies |  Dataset              | OpenFF Optimization Set 1 |  SMIRNOFF Coverage Set 1  |
-| Torsion profiles        |  TorsionDriveDataset  | OpenFF Optimization Set 1 |  SMIRNOFF Coverage Set 1  |  
+|                         |    Collection type    |    Name for "Roche set"   |      Name for "Coverage set"      |
+|-------------------------|:---------------------:|:-------------------------:|:---------------------------------:|
+| Optimized geometries    |  OptimizationDataset  | OpenFF Optimization Set 1 |  SMIRNOFF Coverage Set 1          |
+| Vibrational frequencies |  Dataset              | OpenFF Optimization Set 1 |  SMIRNOFF Coverage Set 1          |
+| Torsion profiles        |  TorsionDriveDataset  | OpenFF Group1 Torsions    |  SMIRNOFF Coverage Torsion Set 1  |  
 </center>
 
 The [blog post](https://openforcefield.org/news/introducing-openforcefield-1.0/#fitting-parsley-to-quantum-chemical-data) provides a nice overview of the background behind the selection and generation of datasets.
@@ -105,15 +105,14 @@ python ../../openforcefield-forcebalance/vib_freq_target/make_vib_frq_target.py 
 To generate the fitting targets for a TorsionDriveDataset “OpenFF Optimization Set 1”:
 ```
 cd ..; mkdir td-opt-set1; cd td-opt-set1
-python ../../openforcefield-forcebalance/torsion_target/make_torsion_target_new.py “OpenFF 
-Optimization Set 1” -t ../input_ff.offxml | tee run.log
+python ../../openforcefield-forcebalance/torsion_target/make_torsion_target_new.py “OpenFF Group1 Torsions” -t ../input_ff.offxml | tee run.log
 ```
 This script pulls torsion scan trajectories from the server, filters out trajectories that contain any frame with hydrogen bonds, and formats into ForceBalance torsion profiles targets, while saving the useful metadata about the torsiondrive records as metadata.json in each target folder. 
 
 Repeating the process for “SMIRNOFF Coverage Set 1”:
 ```
 cd ..;mkdir td-coverage-set1;cd td-coverage-set1
-python ../../openforcefield-forcebalance/torsion_target/make_torsion_target_new.py “SMIRNOFF Coverage Set 1” -t ../input_ff.offxml | tee run.log
+python ../../openforcefield-forcebalance/torsion_target/make_torsion_target_new.py “SMIRNOFF Coverage Torsion Set 1” -t ../input_ff.offxml | tee run.log
 ```
 
 ### 3. Run Fitting with ForceBalance

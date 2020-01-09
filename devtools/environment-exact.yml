@@ -5,8 +5,7 @@ channels:
   - omnia
   - defaults
 dependencies:
-  ### not sure which version of mdtraj
-  - mdtraj
+  - mdtraj=1.9.3=py37h00575c5_0
   - _libgcc_mutex=0.1=main
   - ambermini=16.16.0=7
   - asn1crypto=1.2.0=py37_0

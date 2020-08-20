@@ -83,18 +83,32 @@ def plot_compare_rmse_smirks(agg_data, fnm='compare_optgeo_rmse.pdf'):
             y_pos = np.arange(n)
             plt.figure(figsize=(8.5, n*0.12+1.2))
             # plot the initial rmse
-            plt.barh(y_pos, orig_rmse_array, tick_label=sid_list, height=0.8, color='C0', align='center')
+            # plt.barh(y_pos, orig_rmse_array, tick_label=sid_list, height=0.8, color='C0', align='center')
+            plt.scatter(orig_rmse_array, y_pos, marker='o', s=80, facecolors='none', edgecolors='grey')
+            plt.yticks(y_pos, sid_list)
             # plot the changes in different colors
             increase_idxs = np.nonzero(rmse_changes >=0)[0]
             decrease_idxs = np.nonzero(rmse_changes <0)[0]
-            plt.barh(y_pos[increase_idxs], rmse_changes[increase_idxs], left=orig_rmse_array[increase_idxs], height=0.6, color='C3', align='center')
-            plt.barh(y_pos[decrease_idxs], rmse_changes[decrease_idxs], left=orig_rmse_array[decrease_idxs], height=0.6, color='C2', align='center')
+            xmin = 0
+            xmax = max(orig_rmse_array.max(), new_rmse_array.max())
+            head_length = 0.01*(xmax-xmin)
+            for i in increase_idxs:
+                if abs(rmse_changes[i]) > head_length:
+                    plt.arrow(orig_rmse_array[i], y_pos[i], rmse_changes[i], 0.0, head_width=0.4, head_length=head_length, length_includes_head=True, width=0.05, color='C3')
+            for i in decrease_idxs:
+                if abs(rmse_changes[i]) > head_length:
+                    plt.arrow(orig_rmse_array[i], y_pos[i], rmse_changes[i], 0.0, head_width=0.4, head_length=head_length, length_includes_head=True, width=0.05, color='C2')
+            # Compute some metrics for a table
+            print("Parameter type: %s" % fftype)
+            print("Total number of parameters: %i" % len(sid_data_list))
+            print("Parameters improved: %i/%i (%.1f%%)" % (len(decrease_idxs), len(sid_data_list), 100.0*len(decrease_idxs)/len(sid_data_list)))
+            print("Average RMSE change: %.4f -> %.4f (%.4f, %.1f%%)" % (np.mean(orig_rmse_array), np.mean(orig_rmse_array+rmse_changes), np.mean(rmse_changes), 100.0*np.mean(rmse_changes)/np.mean(orig_rmse_array)))
+            # plt.barh(y_pos[increase_idxs], rmse_changes[increase_idxs], left=orig_rmse_array[increase_idxs], height=0.6, color='C3', align='center')
+            # plt.barh(y_pos[decrease_idxs], rmse_changes[decrease_idxs], left=orig_rmse_array[decrease_idxs], height=0.6, color='C2', align='center')
             # adjust the y range, and invert the yaxis
             #plt.ylim(y_pos[0]-1, y_pos[-1]+1)
             plt.ylim(y_pos[-1]+1, y_pos[0]-1)
             # adjust the x range
-            xmin = 0
-            xmax = max(orig_rmse_array.max(), new_rmse_array.max())
             padding = (xmax - xmin) * 0.01
             plt.xlim(xmin, xmax+padding)
             plt.xlabel(xlabels[fftype.lower()])

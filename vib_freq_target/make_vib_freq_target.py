@@ -272,7 +272,7 @@ def create_vdata_txt(pdb_fnm, data):
     mass_weighted_hessian = hessian * invert_sqrt_mass_array_repeat[:, np.newaxis] * invert_sqrt_mass_array_repeat[np.newaxis, :]
     mass_weighted_hessian *= 937583.07 # convert units from Eh / bohr^2 * dalton to 10^24 s^-2
     # perform normal mode analysis
-    freqs, normal_modes = compute_normal_modes(mass_weighted_hessian)
+    freqs, normal_modes = compute_normal_modes(mass_weighted_hessian, mass_array)
     # write vdata.txt
     with open('vdata.txt', 'w') as outfile:
         outfile.write(data['molecule'].to_string('xyz') + '\n')
@@ -282,7 +282,7 @@ def create_vdata_txt(pdb_fnm, data):
                 outfile.write(f'{nx:13.4f} {ny:13.4f} {nz:13.4f}\n')
             outfile.write('\n')
 
-def compute_normal_modes(mass_weighted_hessian):
+def compute_normal_modes(mass_weighted_hessian, mass_array):
     # 1. diagonalize the hessian matrix
     eigvals, eigvecs = np.linalg.eigh(mass_weighted_hessian)
     # 2. convert eigenvalues to frequencies
@@ -291,15 +291,14 @@ def compute_normal_modes(mass_weighted_hessian):
     freqs = np.sqrt(np.abs(eigvals)) * coef * negatives
     # 3. convert eigenvectors to normal modes
     noa = int(len(mass_weighted_hessian)/3)
-    # scale the eigenvectors by mass^-1/2 (This is not needed)
-    #normal_modes = (eigvecs.reshape(noa, -1) / np.sqrt(mass_array)[:, np.newaxis]).reshape(noa*3, noa*3)
-    normal_modes = eigvecs
+    # scale the eigenvectors by mass^-1/2
+    normal_modes = (eigvecs.reshape(noa, -1) / np.sqrt(mass_array)[:, np.newaxis]).reshape(noa*3, noa*3)
     # re-arange to row index and shape
     normal_modes = normal_modes.T.reshape(noa*3, noa, 3)
     # nomalize the scaled normal modes
-    # norm_factors = np.sqrt(np.sum(np.square(normal_modes), axis=(1,2)))
-    # normal_modes /= norm_factors[:, np.newaxis, np.newaxis]
-    # step 5: remove the 6 freqs with smallest abs value and corresponding normal modes
+    norm_factors = np.sqrt(np.sum(np.square(normal_modes), axis=(1,2)))
+    normal_modes /= norm_factors[:, np.newaxis, np.newaxis]
+    # 4. remove the 6 freqs with smallest abs value and corresponding normal modes
     n_remove = 5 if noa == 2 else 6
     larger_freq_idxs = np.sort(np.argpartition(np.abs(freqs), n_remove)[n_remove:])
     freqs = freqs[larger_freq_idxs]

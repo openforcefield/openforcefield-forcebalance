@@ -5,6 +5,7 @@ channels:
   - omnia
   - defaults
 dependencies:
+  - mdtraj
   - pip
   - notebook
   - matplotlib

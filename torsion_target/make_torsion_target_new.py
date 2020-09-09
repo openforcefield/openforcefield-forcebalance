@@ -16,6 +16,15 @@ from openforcefield.typing.engines.smirnoff import ForceField
 client = ptl.FractalClient('https://api.qcarchive.molssi.org:443/')
 ofs = oechem.oemolostream()
 
+SkipDatasets = [
+"[H:4][O:3][C:2](=O)[C:1]1(CC1)c2ccon2",
+"[H:4][O:3][S@@:2](=[O:1])c1cc(ccn1)Cl",
+"[H:4][CH:3]1CS(=O)(=O)CC[C:2]12C[NH+]=C([O:1]2)N",
+"[CH3:1][O:2][C:3](=[O:4])Cc1csc(n1)NS(=O)(=O)C",
+"COC(=O)Cc1cs/[c:1](=[N:2]/[S:3](=[O:4])(=O)C)/[nH]1",
+"C[C@H]1C[N@:3]([S:4](=O)(=O)C1)[NH:2][CH3:1]",
+"[H:4][N:3](C)[N@@:2]1C[C@@H](C[S:1]1(=O)=O)C",
+"[H:4][O:3][C:2](=O)[C@@:1]1(CC1(C)C)C(=O)N" ]
 
 def download_torsiondrive_data(dataset_name):
     """
@@ -93,6 +102,9 @@ def download_torsiondrive_data(dataset_name):
     torsiondrive_data = {}
     for i, td_record in enumerate(client.query_procedures(id=td_record_ids), 1):
         entry_index, attributes = map_record_id_entry_index[td_record.id]
+        if entry_index in SkipDatasets:
+            print(f"{i:5d} : {entry_index:50s} status SKIPPED")
+            continue
         print(f"{i:5d} : {entry_index:50s} status {td_record.status}")
         if td_record.status == 'COMPLETE':
             torsiondrive_data[entry_index] = {

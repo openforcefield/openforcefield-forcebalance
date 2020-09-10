@@ -1,0 +1,25 @@
+name: parsley
+channels:
+  - openeye
+  - conda-forge
+  - omnia
+  - defaults
+dependencies:
+  - pip
+  - notebook
+  - matplotlib
+  - qcportal
+  - geometric
+  - openeye-toolkits
+  - openforcefield=0.4.1
+  - cmiles
+  - numpy
+  - scipy
+  - networkx
+  - future
+  - pymbar
+  - lxml
+  - pip:
+    - git+git://github.com/leeping/forcebalance.git@5b3a65d
+prefix: /home/leeping/opt/miniconda3/envs/parsley
+

@@ -1,0 +1,187 @@
+,Temperature,Pressure,Phase,Number Of Components,Component 1,Mole Fraction 1,Component 2,Mole Fraction 2,EnthalpyOfMixing Value,EnthalpyOfMixing Uncertainty,ExcessMolarVolume Value,ExcessMolarVolume Uncertainty,DielectricConstant Value,DielectricConstant Uncertainty,EnthalpyOfVaporization Value,EnthalpyOfVaporization Uncertainty,Density Value,Density Uncertainty
+0,298.15 kelvin,101.0 kilopascal,2,2,CCCCOC=O,0.3993,C(CBr)Br,0.6007,0.137 kilojoule / mole,0.0 kilojoule / mole,1.78e-07 meter ** 3 / mole,0.0 meter ** 3 / mole,,,,,,
+1,298.15 kelvin,101.0 kilopascal,2,2,CCCCOC=O,0.7738,C(CBr)Br,0.2262,,,9.6e-08 meter ** 3 / mole,0.0 meter ** 3 / mole,,,,,,
+2,298.15 kelvin,101.0 kilopascal,2,2,CCCCOC=O,0.7275,C(CBr)Br,0.2725,0.067 kilojoule / mole,0.0 kilojoule / mole,,,,,,,,
+3,298.15 kelvin,101.0 kilopascal,2,2,C(CBr)Br,0.2547,CCCCOC(=O)C,0.7453000000000001,,,1.42e-07 meter ** 3 / mole,0.0 meter ** 3 / mole,,,,,,
+4,298.15 kelvin,101.0 kilopascal,2,2,C(CBr)Br,0.2146,CCCCOC(=O)C,0.7854,-0.116 kilojoule / mole,0.0 kilojoule / mole,,,,,,,,
+5,298.15 kelvin,101.0 kilopascal,2,2,C(CBr)Br,0.7476,CCCCOC(=O)C,0.2524,,,1.22e-07 meter ** 3 / mole,0.0 meter ** 3 / mole,,,,,,
+6,298.15 kelvin,101.0 kilopascal,2,2,C(CBr)Br,0.7661,CCCCOC(=O)C,0.2339,-0.043 kilojoule / mole,0.0 kilojoule / mole,,,,,,,,
+7,298.15 kelvin,101.0 kilopascal,2,2,c1ccccc1,0.2877,CCCCCCCl,0.7122999999999999,,,1.218e-07 meter ** 3 / mole,0.0 meter ** 3 / mole,,,,,,
+8,298.15 kelvin,101.0 kilopascal,2,2,c1ccccc1,0.2862,CCCCCCCl,0.7138,0.0331 kilojoule / mole,0.0 kilojoule / mole,,,,,,,,
+9,298.15 kelvin,101.0 kilopascal,2,2,c1ccccc1,0.7352,CCCCCCCl,0.26480000000000004,0.1097 kilojoule / mole,0.0 kilojoule / mole,,,,,,,,
+10,298.15 kelvin,101.0 kilopascal,2,2,c1ccccc1,0.772,CCCCCCCl,0.228,,,1.876e-07 meter ** 3 / mole,0.0 meter ** 3 / mole,,,,,,
+11,308.15 kelvin,101.0 kilopascal,2,2,Cc1ccccc1N,0.2681,c1ccncc1,0.7319,-0.8915 kilojoule / mole,0.0 kilojoule / mole,,,,,,,,
+12,298.15 kelvin,101.0 kilopascal,2,2,Cc1ccccc1N,0.2374,c1ccncc1,0.7626,,,-2.944e-07 meter ** 3 / mole,0.0 meter ** 3 / mole,,,,,,
+13,308.15 kelvin,101.0 kilopascal,2,2,Cc1ccccc1N,0.7735,c1ccncc1,0.2265000000000001,-0.7828 kilojoule / mole,0.0 kilojoule / mole,,,,,,,,
+14,298.15 kelvin,101.0 kilopascal,2,2,Cc1ccccc1N,0.7678,c1ccncc1,0.2322,,,-2.258e-07 meter ** 3 / mole,0.0 meter ** 3 / mole,,,,,,
+15,308.15 kelvin,101.0 kilopascal,2,2,Cc1ccccc1N,0.2715,Cc1ccncc1,0.7284999999999999,-1.1791 kilojoule / mole,0.0 kilojoule / mole,,,,,,,,
+16,298.15 kelvin,101.0 kilopascal,2,2,Cc1ccccc1N,0.2655,Cc1ccncc1,0.7344999999999999,,,-3.65e-07 meter ** 3 / mole,0.0 meter ** 3 / mole,,,,,,
+17,308.15 kelvin,101.0 kilopascal,2,2,Cc1ccccc1N,0.7827,Cc1ccncc1,0.21730000000000005,-0.8885 kilojoule / mole,0.0 kilojoule / mole,,,,,,,,
+18,298.15 kelvin,101.0 kilopascal,2,2,Cc1ccccc1N,0.7674,Cc1ccncc1,0.2326000000000001,,,-2.209e-07 meter ** 3 / mole,0.0 meter ** 3 / mole,,,,,,
+19,298.15 kelvin,101.0 kilopascal,2,2,CS(=O)C,0.22030000000000005,CCC(=O)C,0.7797,0.2432 kilojoule / mole,0.0 kilojoule / mole,,,,,,,,
+20,303.15 kelvin,101.0 kilopascal,2,2,CS(=O)C,0.212,CCC(=O)C,0.7879999999999999,,,-1.24e-07 meter ** 3 / mole,0.0 meter ** 3 / mole,,,,,,
+21,298.15 kelvin,101.0 kilopascal,2,2,CS(=O)C,0.7615000000000001,CCC(=O)C,0.2385,0.2599 kilojoule / mole,0.0 kilojoule / mole,,,,,,,,
+22,303.15 kelvin,101.0 kilopascal,2,2,CS(=O)C,0.7340000000000001,CCC(=O)C,0.266,,,7.6e-08 meter ** 3 / mole,0.0 meter ** 3 / mole,,,,,,
+23,298.15 kelvin,101.0 kilopascal,2,2,CS(=O)C,0.2762,C1CCC(=O)CC1,0.7238,0.5252 kilojoule / mole,0.0 kilojoule / mole,,,,,,,,
+24,303.15 kelvin,101.0 kilopascal,2,2,CS(=O)C,0.2241,C1CCC(=O)CC1,0.7759,,,1.42e-07 meter ** 3 / mole,0.0 meter ** 3 / mole,,,,,,
+25,298.15 kelvin,101.0 kilopascal,2,2,CS(=O)C,0.7569,C1CCC(=O)CC1,0.2431,0.5052 kilojoule / mole,0.0 kilojoule / mole,,,,,,,,
+26,303.15 kelvin,101.0 kilopascal,2,2,CS(=O)C,0.7218,C1CCC(=O)CC1,0.2782,,,2.04e-07 meter ** 3 / mole,0.0 meter ** 3 / mole,,,,,,
+27,299.15 kelvin,101.32 kilopascal,2,2,CC(C)(C)O,0.27780000000000005,COC=O,0.7222,2.0563 kilojoule / mole,0.0 kilojoule / mole,8.68e-07 meter ** 3 / mole,0.0 meter ** 3 / mole,,,,,,
+28,299.15 kelvin,101.32 kilopascal,2,2,CC(C)(C)O,0.7127,COC=O,0.2873,1.8888 kilojoule / mole,0.0 kilojoule / mole,,,,,,,,
+29,299.15 kelvin,101.32 kilopascal,2,2,CC(C)(C)O,0.7581,COC=O,0.2419,,,8.67e-07 meter ** 3 / mole,0.0 meter ** 3 / mole,,,,,,
+30,303.15 kelvin,101.32 kilopascal,2,2,CC(C)(C)O,0.25680000000000003,CC(=O)OC,0.7432,,,6.59e-07 meter ** 3 / mole,0.0 meter ** 3 / mole,,,,,,
+31,318.15 kelvin,101.32 kilopascal,2,2,CC(C)(C)O,0.2372,CC(=O)OC,0.7628,1.5357 kilojoule / mole,0.0 kilojoule / mole,,,,,,,,
+32,303.15 kelvin,101.32 kilopascal,2,2,CC(C)(C)O,0.7519,CC(=O)OC,0.2481,,,7.02e-07 meter ** 3 / mole,0.0 meter ** 3 / mole,,,,,,
+33,318.15 kelvin,101.32 kilopascal,2,2,CC(C)(C)O,0.7696000000000001,CC(=O)OC,0.2304,1.2996 kilojoule / mole,0.0 kilojoule / mole,,,,,,,,
+34,303.15 kelvin,101.325 kilopascal,2,2,C(CBr)Br,0.2077,C(=C(Cl)Cl)Cl,0.7923,,,1.29e-07 meter ** 3 / mole,0.0 meter ** 3 / mole,,,,,,
+35,303.15 kelvin,101.325 kilopascal,2,2,C(CBr)Br,0.7903,C(=C(Cl)Cl)Cl,0.2097,,,1.25e-07 meter ** 3 / mole,0.0 meter ** 3 / mole,,,,,,
+36,298.15 kelvin,101.3 kilopascal,2,2,C1CCOC1,0.212,C(C(F)(F)F)O,0.7879999999999999,-1.543 kilojoule / mole,0.0 kilojoule / mole,,,,,,,,
+37,298.15 kelvin,101.3 kilopascal,2,2,C1CCOC1,0.7170000000000001,C(C(F)(F)F)O,0.28300000000000003,-1.427 kilojoule / mole,0.0 kilojoule / mole,,,,,,,,
+38,298.15 kelvin,101.0 kilopascal,2,2,C(C(F)(F)F)O,0.29705,CO,0.70295,-0.7644 kilojoule / mole,0.0 kilojoule / mole,,,,,,,,
+39,298.15 kelvin,101.0 kilopascal,2,2,C(C(F)(F)F)O,0.70985,CO,0.29015,-0.6762 kilojoule / mole,0.0 kilojoule / mole,,,,,,,,
+40,298.15 kelvin,101.0 kilopascal,2,2,C(C(F)(F)F)O,0.29919,CCO,0.7008099999999999,-0.6289 kilojoule / mole,0.0 kilojoule / mole,,,,,,,,
+41,298.15 kelvin,101.0 kilopascal,2,2,C(C(F)(F)F)O,0.79638,CCO,0.20362,-0.3529 kilojoule / mole,0.0 kilojoule / mole,,,,,,,,
+42,298.15 kelvin,101.0 kilopascal,2,2,C(C(F)(F)F)O,0.20133,CCCO,0.79867,-0.2687 kilojoule / mole,0.0 kilojoule / mole,,,,,,,,
+43,298.15 kelvin,101.0 kilopascal,2,2,C(C(F)(F)F)O,0.79867,CCCO,0.20133,-0.1149 kilojoule / mole,0.0 kilojoule / mole,,,,,,,,
+44,298.15 kelvin,101.0 kilopascal,2,2,CCC#N,0.2551,C(Cl)(Cl)(Cl)Cl,0.7449,0.3704 kilojoule / mole,0.0 kilojoule / mole,,,,,,,,
+45,298.15 kelvin,101.0 kilopascal,2,2,CCC#N,0.7326,C(Cl)(Cl)(Cl)Cl,0.2674,0.1846 kilojoule / mole,0.0 kilojoule / mole,,,,,,,,
+46,298.15 kelvin,101.0 kilopascal,2,2,O,0.2554,C(CO)CO,0.7446,,,-2.549e-07 meter ** 3 / mole,0.0 meter ** 3 / mole,,,,,,
+47,298.15 kelvin,101.0 kilopascal,2,2,C(CO)CO,0.2087,O,0.7913,-0.924 kilojoule / mole,0.0 kilojoule / mole,,,,,,,,
+48,298.15 kelvin,101.0 kilopascal,2,2,O,0.7551,C(CO)CO,0.2449,,,-3.274e-07 meter ** 3 / mole,0.0 meter ** 3 / mole,,,,,,
+49,298.15 kelvin,101.0 kilopascal,2,2,C(CO)CO,0.743,O,0.257,-0.633 kilojoule / mole,0.0 kilojoule / mole,,,,,,,,
+50,298.15 kelvin,101.0 kilopascal,2,2,C(CCO)CO,0.2658,O,0.7342,-0.896 kilojoule / mole,0.0 kilojoule / mole,,,,,,,,
+51,298.15 kelvin,101.0 kilopascal,2,2,O,0.2297,C(CCO)CO,0.7703,,,-3.375e-07 meter ** 3 / mole,0.0 meter ** 3 / mole,,,,,,
+52,298.15 kelvin,101.0 kilopascal,2,2,O,0.7847,C(CCO)CO,0.2153,,,-4.411e-07 meter ** 3 / mole,0.0 meter ** 3 / mole,,,,,,
+53,298.15 kelvin,101.0 kilopascal,2,2,C(CCO)CO,0.7947,O,0.20530000000000004,-0.513 kilojoule / mole,0.0 kilojoule / mole,,,,,,,,
+54,298.15 kelvin,101.0 kilopascal,2,2,CO,0.2,O,0.8,-0.806 kilojoule / mole,0.0 kilojoule / mole,,,,,,,,
+55,298.15 kelvin,100.0 kilopascal,2,2,O,0.25,CO,0.75,,,-7.05e-07 meter ** 3 / mole,0.0 meter ** 3 / mole,,,,,,
+56,298.15 kelvin,101.0 kilopascal,2,2,CO,0.8,O,0.2,-0.412 kilojoule / mole,0.0 kilojoule / mole,,,,,,,,
+57,298.15 kelvin,100.0 kilopascal,2,2,O,0.75,CO,0.25,,,-7.42e-07 meter ** 3 / mole,0.0 meter ** 3 / mole,,,,,,
+58,298.15 kelvin,101.0 kilopascal,2,2,C(C(F)(F)F)(C(F)(F)F)O,0.205,O,0.795,,,-7.19e-07 meter ** 3 / mole,0.0 meter ** 3 / mole,,,,,,
+59,298.15 kelvin,101.0 kilopascal,2,2,C(C(F)(F)F)(C(F)(F)F)O,0.8065,O,0.1935,,,-1.62e-07 meter ** 3 / mole,0.0 meter ** 3 / mole,,,,,,
+60,298.15 kelvin,101.0 kilopascal,2,2,CN1CCCCC1,0.2452,O,0.7548,,,-1.63e-06 meter ** 3 / mole,0.0 meter ** 3 / mole,,,,,,
+61,298.15 kelvin,101.0 kilopascal,2,2,CN1CCCCC1,0.004409000000000001,O,0.995591,-0.12962 kilojoule / mole,0.0 kilojoule / mole,,,,,,,,
+62,308.15 kelvin,101.0 kilopascal,2,2,CN1CCCCC1,0.78,O,0.22,,,-9.1e-07 meter ** 3 / mole,0.0 meter ** 3 / mole,,,,,,
+63,298.15 kelvin,101.0 kilopascal,2,2,C(CO)O,0.25008,O,0.7499199999999999,,,-3.038e-07 meter ** 3 / mole,0.0 meter ** 3 / mole,,,,,,
+64,298.15 kelvin,101.0 kilopascal,2,2,C(CO)O,0.20509999999999995,O,0.7949,-0.681 kilojoule / mole,0.0 kilojoule / mole,,,,,,,,
+65,298.15 kelvin,101.0 kilopascal,2,2,C(CO)O,0.7908999999999999,O,0.2091,-0.347 kilojoule / mole,0.0 kilojoule / mole,,,,,,,,
+66,298.15 kelvin,101.0 kilopascal,2,2,C(CO)O,0.77876,O,0.22124,,,-1.782e-07 meter ** 3 / mole,0.0 meter ** 3 / mole,,,,,,
+67,298.15 kelvin,101.0 kilopascal,2,2,C(C(F)(F)F)O,0.29878000000000005,O,0.70122,0.362 kilojoule / mole,0.0 kilojoule / mole,,,,,,,,
+68,298.15 kelvin,101.0 kilopascal,2,2,C(C(F)(F)F)O,0.7077899999999999,O,0.29220999999999997,0.69 kilojoule / mole,0.0 kilojoule / mole,,,,,,,,
+69,297.15 kelvin,101.0 kilopascal,2,2,c1ccncc1,0.27,O,0.73,-1.33 kilojoule / mole,0.0 kilojoule / mole,,,,,,,,
+70,297.15 kelvin,101.0 kilopascal,2,2,c1ccncc1,0.75,O,0.25,-0.8769 kilojoule / mole,0.0 kilojoule / mole,,,,,,,,
+71,298.15 kelvin,101.0 kilopascal,2,2,Cn1ccnc1,0.006766,O,0.993234,-0.06261 kilojoule / mole,0.0 kilojoule / mole,,,,,,,,
+72,298.15 kelvin,101.0 kilopascal,2,2,Cc1cccnc1,0.005509,O,0.994491,-0.05122 kilojoule / mole,0.0 kilojoule / mole,,,,,,,,
+73,298.15 kelvin,101.0 kilopascal,2,2,Cc1ccncc1,0.005492,O,0.994508,-0.05209 kilojoule / mole,0.0 kilojoule / mole,,,,,,,,
+74,298.15 kelvin,101.0 kilopascal,2,2,Cc1cccc(n1)C,0.004618,O,0.995382,-0.07236 kilojoule / mole,0.0 kilojoule / mole,,,,,,,,
+75,313.15 kelvin,101.0 kilopascal,2,2,C1COCCN1,0.2968,O,0.7032,-3.444 kilojoule / mole,0.0 kilojoule / mole,,,,,,,,
+76,298.15 kelvin,101.0 kilopascal,2,2,C1COCCN1,0.7149,O,0.2851,-1.753 kilojoule / mole,0.0 kilojoule / mole,,,,,,,,
+77,318.15 kelvin,101.3 kilopascal,2,2,O,0.997504,CCCOC(=O)C,0.002496,-0.00924 kilojoule / mole,0.0 kilojoule / mole,,,,,,,,
+78,298.15 kelvin,101.3 kilopascal,2,2,O,0.997803,CCCC(=O)OC,0.002197,-0.01689 kilojoule / mole,0.0 kilojoule / mole,,,,,,,,
+79,298.15 kelvin,101.0 kilopascal,2,2,C(COCCO)O,0.20020000000000004,O,0.7998,-1.172 kilojoule / mole,0.0 kilojoule / mole,,,,,,,,
+80,298.15 kelvin,101.0 kilopascal,2,2,C(COCCO)O,0.7906,O,0.2094,-0.521 kilojoule / mole,0.0 kilojoule / mole,,,,,,,,
+81,298.15 kelvin,101.325 kilopascal,2,1,C(CO)O,1.0,,,,,,,,,63.9 kilojoule / mole,0.0 kilojoule / mole,1109.89 kilogram / meter ** 3,0.0 kilogram / meter ** 3
+82,303.15 kelvin,101.325 kilopascal,2,1,C(CO)O,1.0,,,,,,,39.84 dimensionless,0.0 dimensionless,,,1106.38 kilogram / meter ** 3,0.0 kilogram / meter ** 3
+83,298.15 kelvin,101.325 kilopascal,2,1,C(CO)CO,1.0,,,,,,,,,69.8 kilojoule / mole,0.0 kilojoule / mole,1049.9 kilogram / meter ** 3,0.0 kilogram / meter ** 3
+84,298.15 kelvin,101.325 kilopascal,2,1,C(CCO)CO,1.0,,,,,,,,,77.1 kilojoule / mole,0.0 kilojoule / mole,1013.04 kilogram / meter ** 3,0.0 kilogram / meter ** 3
+85,298.15 kelvin,101.325 kilopascal,2,1,c1ccccc1,1.0,,,,,,,,,,,873.6 kilogram / meter ** 3,0.0 kilogram / meter ** 3
+86,298.0 kelvin,101.325 kilopascal,6,1,c1ccccc1,1.0,,,,,,,,,33.25 kilojoule / mole,0.0 kilojoule / mole,,
+87,303.15 kelvin,101.325 kilopascal,2,1,CCO,1.0,,,,,,,23.87 dimensionless,0.0 dimensionless,,,780.72 kilogram / meter ** 3,0.0 kilogram / meter ** 3
+88,298.15 kelvin,101.325 kilopascal,2,1,CCCCOC(=O)C,1.0,,,,,,,,,,,876.004 kilogram / meter ** 3,0.0 kilogram / meter ** 3
+89,298.15 kelvin,101.325 kilopascal,2,1,CCC(=O)C,1.0,,,,,,,,,,,800.872 kilogram / meter ** 3,0.0 kilogram / meter ** 3
+90,298.15 kelvin,101.325 kilopascal,2,1,Cc1ccccc1N,1.0,,,,,,,,,,,994.351 kilogram / meter ** 3,0.0 kilogram / meter ** 3
+91,298.15 kelvin,101.325 kilopascal,2,1,C1CCOC1,1.0,,,,,,,,,,,882.04 kilogram / meter ** 3,0.0 kilogram / meter ** 3
+92,298.15 kelvin,101.325 kilopascal,2,1,C(C(F)(F)F)O,1.0,,,,,,,,,,,1382.44 kilogram / meter ** 3,0.0 kilogram / meter ** 3
+93,298.15 kelvin,101.325 kilopascal,2,1,C1CCC(=O)CC1,1.0,,,,,,,15.77 dimensionless,0.0 dimensionless,,,941.7 kilogram / meter ** 3,0.0 kilogram / meter ** 3
+94,298.15 kelvin,100.0 kilopascal,2,1,CC(C)(C)O,1.0,,,,,,,12.49 dimensionless,0.0 dimensionless,,,780.72 kilogram / meter ** 3,0.0 kilogram / meter ** 3
+95,298.15 kelvin,101.325 kilopascal,2,1,CCCOC(=O)C,1.0,,,,,,,,,,,882.21 kilogram / meter ** 3,0.0 kilogram / meter ** 3
+96,298.15 kelvin,101.325 kilopascal,2,1,CC(=O)OC,1.0,,,,,,,,,,,927.1 kilogram / meter ** 3,0.0 kilogram / meter ** 3
+97,300.15 kelvin,101.325 kilopascal,2,1,CCCO,1.0,,,,,,,20.678 dimensionless,0.0 dimensionless,,,798.5 kilogram / meter ** 3,0.0 kilogram / meter ** 3
+98,303.15 kelvin,101.0 kilopascal,2,1,CS(=O)C,1.0,,,,,,,45.94 dimensionless,0.0 dimensionless,,,1090.73 kilogram / meter ** 3,0.0 kilogram / meter ** 3
+99,298.15 kelvin,101.0 kilopascal,2,1,CO,1.0,,,,,,,32.6 dimensionless,0.0 dimensionless,,,786.59 kilogram / meter ** 3,0.0 kilogram / meter ** 3
+100,298.15 kelvin,101.325 kilopascal,2,1,c1ccncc1,1.0,,,,,,,,,,,978.138 kilogram / meter ** 3,0.0 kilogram / meter ** 3
+101,298.15 kelvin,101.325 kilopascal,2,1,COC=O,1.0,,,,,,,,,,,966.1 kilogram / meter ** 3,0.0 kilogram / meter ** 3
+102,298.15 kelvin,101.325 kilopascal,2,1,CCCCOC=O,1.0,,,,,,,,,,,888.47 kilogram / meter ** 3,0.0 kilogram / meter ** 3
+103,298.15 kelvin,101.325 kilopascal,2,1,C(=C(Cl)Cl)Cl,1.0,,,,,,,,,,,1455.53 kilogram / meter ** 3,0.0 kilogram / meter ** 3
+104,295.15 kelvin,101.325 kilopascal,2,1,C(CBr)Br,1.0,,,,,,,,,,,2168.3 kilogram / meter ** 3,0.0 kilogram / meter ** 3
+105,298.15 kelvin,101.325 kilopascal,2,1,CCCC(=O)OC,1.0,,,,,,,,,,,892.38 kilogram / meter ** 3,0.0 kilogram / meter ** 3
+106,298.15 kelvin,101.325 kilopascal,2,1,C(Cl)(Cl)(Cl)Cl,1.0,,,,,,,,,,,1584.3 kilogram / meter ** 3,0.0 kilogram / meter ** 3
+107,298.15 kelvin,101.325 kilopascal,2,1,C(C(F)(F)F)(C(F)(F)F)O,1.0,,,,,,,,,,,1604.84 kilogram / meter ** 3,0.0 kilogram / meter ** 3
+108,298.15 kelvin,101.0 kilopascal,2,1,C(COCCO)O,1.0,,,,,,,30.95 dimensionless,0.0 dimensionless,,,1112.4 kilogram / meter ** 3,0.0 kilogram / meter ** 3
+109,298.15 kelvin,101.325 kilopascal,2,1,CCCCCCCl,1.0,,,,,,,,,,,873.38 kilogram / meter ** 3,0.0 kilogram / meter ** 3
+110,298.15 kelvin,101.325 kilopascal,2,1,Cc1ccncc1,1.0,,,,,,,,,,,950.179 kilogram / meter ** 3,0.0 kilogram / meter ** 3
+111,298.15 kelvin,101.325 kilopascal,2,1,CCC#N,1.0,,,,,,,,,,,775.4 kilogram / meter ** 3,0.0 kilogram / meter ** 3
+112,298.15 kelvin,101.325 kilopascal,2,1,C1COCCN1,1.0,,,,,,,,,,,996.0 kilogram / meter ** 3,0.0 kilogram / meter ** 3
+113,298.15 kelvin,101.325 kilopascal,2,1,Cc1cccnc1,1.0,,,,,,,,,,,952.002 kilogram / meter ** 3,0.0 kilogram / meter ** 3
+114,298.15 kelvin,101.325 kilopascal,2,1,Cn1ccnc1,1.0,,,,,,,,,,,1031.14 kilogram / meter ** 3,0.0 kilogram / meter ** 3
+115,298.15 kelvin,101.325 kilopascal,2,1,CN1CCCCC1,1.0,,,,,,,,,,,810.887 kilogram / meter ** 3,0.0 kilogram / meter ** 3
+116,298.15 kelvin,101.325 kilopascal,2,1,Cc1cccc(n1)C,1.0,,,,,,,,,,,918.19 kilogram / meter ** 3,0.0 kilogram / meter ** 3
+117,298.15 kelvin,101.325 kilopascal,6,1,COc1ccccn1,1.0,,,,,,,,,45.1 kilojoule / mole,0.0 kilojoule / mole,,
+118,298.15 kelvin,101.325 kilopascal,6,1,COc1ccncc1,1.0,,,,,,,,,57.4 kilojoule / mole,0.0 kilojoule / mole,,
+119,298.15 kelvin,101.325 kilopascal,6,1,CCOC(=O)/C=C(/C)\O,1.0,,,,,,,,,54.7 kilojoule / mole,0.0 kilojoule / mole,,
+120,298.15 kelvin,101.325 kilopascal,6,1,c1ccc(c(c1)F)Cl,1.0,,,,,,,,,44.0 kilojoule / mole,0.0 kilojoule / mole,,
+121,298.15 kelvin,101.325 kilopascal,6,1,c1cc(cc(c1)Cl)F,1.0,,,,,,,,,43.0 kilojoule / mole,0.0 kilojoule / mole,,
+122,298.15 kelvin,101.325 kilopascal,6,1,c1ccc(c(c1)F)Br,1.0,,,,,,,,,47.0 kilojoule / mole,0.0 kilojoule / mole,,
+123,298.15 kelvin,101.325 kilopascal,6,1,CC(=O)c1ccco1,1.0,,,,,,,,,53.0 kilojoule / mole,0.0 kilojoule / mole,,
+124,298.15 kelvin,101.325 kilopascal,6,1,CC(=CCOC(=O)C)C,1.0,,,,,,,,,47.8 kilojoule / mole,0.0 kilojoule / mole,,
+125,298.15 kelvin,101.325 kilopascal,6,1,C/C=C/C=C/COC(=O)C,1.0,,,,,,,,,54.7 kilojoule / mole,0.0 kilojoule / mole,,
+126,298.15 kelvin,101.325 kilopascal,6,1,CC(=O)OCCc1ccccc1,1.0,,,,,,,,,61.3 kilojoule / mole,0.0 kilojoule / mole,,
+127,298.15 kelvin,101.325 kilopascal,6,1,COc1cccc(c1)O,1.0,,,,,,,,,75.9 kilojoule / mole,0.0 kilojoule / mole,,
+128,298.15 kelvin,101.325 kilopascal,6,1,COc1cccc(c1OC)O,1.0,,,,,,,,,76.5 kilojoule / mole,0.0 kilojoule / mole,,
+129,298.15 kelvin,101.325 kilopascal,6,1,Cc1ccsc1C(=O)C,1.0,,,,,,,,,57.1 kilojoule / mole,0.0 kilojoule / mole,,
+130,298.15 kelvin,101.325 kilopascal,6,1,Cc1cc(sc1)C(=O)C,1.0,,,,,,,,,63.0 kilojoule / mole,0.0 kilojoule / mole,,
+131,298.15 kelvin,101.325 kilopascal,6,1,c1coc2c1C(=O)CCC2,1.0,,,,,,,,,69.4 kilojoule / mole,0.0 kilojoule / mole,,
+132,298.15 kelvin,101.325 kilopascal,6,1,Cn1cccc1C(=O)OC,1.0,,,,,,,,,59.2 kilojoule / mole,0.0 kilojoule / mole,,
+133,298.15 kelvin,101.325 kilopascal,6,1,CCOC(=O)c1cccs1,1.0,,,,,,,,,61.2 kilojoule / mole,0.0 kilojoule / mole,,
+134,298.15 kelvin,101.325 kilopascal,6,1,CCOC(=O)CN=[N+]=[N-],1.0,,,,,,,,,56.3 kilojoule / mole,0.0 kilojoule / mole,,
+135,298.15 kelvin,101.325 kilopascal,6,1,Cc1ccc(s1)C=O,1.0,,,,,,,,,56.2 kilojoule / mole,0.0 kilojoule / mole,,
+136,298.15 kelvin,101.325 kilopascal,6,1,Cc1ccsc1C=O,1.0,,,,,,,,,57.7 kilojoule / mole,0.0 kilojoule / mole,,
+137,298.15 kelvin,101.325 kilopascal,6,1,CCc1ccc(s1)C=O,1.0,,,,,,,,,62.2 kilojoule / mole,0.0 kilojoule / mole,,
+138,298.15 kelvin,101.325 kilopascal,6,1,c1cc(sc1)CC#N,1.0,,,,,,,,,60.5 kilojoule / mole,0.0 kilojoule / mole,,
+139,298.15 kelvin,101.325 kilopascal,6,1,c1cscc1CC#N,1.0,,,,,,,,,61.1 kilojoule / mole,0.0 kilojoule / mole,,
+140,298.15 kelvin,101.325 kilopascal,6,1,Cc1ccsc1C#N,1.0,,,,,,,,,54.4 kilojoule / mole,0.0 kilojoule / mole,,
+141,298.15 kelvin,101.325 kilopascal,6,1,CC(=O)c1ccccc1OC,1.0,,,,,,,,,66.7 kilojoule / mole,0.0 kilojoule / mole,,
+142,298.15 kelvin,101.325 kilopascal,6,1,CC(=O)c1cccc(c1)OC,1.0,,,,,,,,,67.8 kilojoule / mole,0.0 kilojoule / mole,,
+143,303.15 kelvin,101.325 kilopascal,2,1,CN(C)C=O,1.0,,,,,,,36.55 dimensionless,0.0 dimensionless,,,939.0 kilogram / meter ** 3,0.0 kilogram / meter ** 3
+144,303.15 kelvin,101.325 kilopascal,2,1,CC(=O)N(C)C,1.0,,,,,,,37.72 dimensionless,0.0 dimensionless,,,931.762 kilogram / meter ** 3,0.0 kilogram / meter ** 3
+145,298.15 kelvin,101.325 kilopascal,2,1,c1ccc2c(c1)ccs2,1.0,,,,,,,,,,,1427.0 kilogram / meter ** 3,0.0 kilogram / meter ** 3
+146,298.15 kelvin,101.0 kilopascal,2,1,CC(C)CO,1.0,,,,,,,17.96 dimensionless,0.0 dimensionless,,,797.54 kilogram / meter ** 3,0.0 kilogram / meter ** 3
+147,298.15 kelvin,101.0 kilopascal,2,1,CCCCO,1.0,,,,,,,17.54 dimensionless,0.0 dimensionless,,,805.24 kilogram / meter ** 3,0.0 kilogram / meter ** 3
+148,303.15 kelvin,101.0 kilopascal,2,1,C(CO)N,1.0,,,,,,,31.46 dimensionless,0.0 dimensionless,,,1008.323 kilogram / meter ** 3,0.0 kilogram / meter ** 3
+149,303.15 kelvin,101.325 kilopascal,2,1,C(CO)NCCO,1.0,,,,,,,24.69 dimensionless,0.0 dimensionless,,,1090.788 kilogram / meter ** 3,0.0 kilogram / meter ** 3
+150,303.15 kelvin,101.325 kilopascal,2,1,C(CO)N(CCO)CCO,1.0,,,,,,,28.11 dimensionless,0.0 dimensionless,,,1118.209 kilogram / meter ** 3,0.0 kilogram / meter ** 3
+151,300.15 kelvin,101.325 kilopascal,2,1,CC(C)O,1.0,,,,,,,18.562 dimensionless,0.0 dimensionless,,,779.2 kilogram / meter ** 3,0.0 kilogram / meter ** 3
+152,298.15 kelvin,100.0 kilopascal,2,1,CCCCCCO,1.0,,,,,,,13.06 dimensionless,0.0 dimensionless,,,815.3 kilogram / meter ** 3,0.0 kilogram / meter ** 3
+153,298.15 kelvin,100.0 kilopascal,2,1,CCCCCCCO,1.0,,,,,,,11.41 dimensionless,0.0 dimensionless,,,818.79 kilogram / meter ** 3,0.0 kilogram / meter ** 3
+154,298.15 kelvin,101.325 kilopascal,2,1,CCCCCO,1.0,,,,,,,15.144 dimensionless,0.0 dimensionless,,,810.89 kilogram / meter ** 3,0.0 kilogram / meter ** 3
+155,298.15 kelvin,100.0 kilopascal,2,1,CCCCCCCCO,1.0,,,,,,,10.01 dimensionless,0.0 dimensionless,,,821.9 kilogram / meter ** 3,0.0 kilogram / meter ** 3
+156,303.15 kelvin,101.325 kilopascal,2,1,CN(CCO)CCO,1.0,,,,,,,21.84 dimensionless,0.0 dimensionless,,,1033.056 kilogram / meter ** 3,0.0 kilogram / meter ** 3
+157,303.15 kelvin,101.3 kilopascal,2,1,C(COCCOCCOCCO)O,1.0,,,,,,,19.35 dimensionless,0.0 dimensionless,,,1116.56 kilogram / meter ** 3,0.0 kilogram / meter ** 3
+158,298.15 kelvin,101.325 kilopascal,2,1,c1cc(cc(c1)Br)Cl,1.0,,,,,,,,,,,1624.97 kilogram / meter ** 3,0.0 kilogram / meter ** 3
+159,298.15 kelvin,101.325 kilopascal,2,1,c1ccc(c(c1)Cl)Br,1.0,,,,,,,,,,,1646.32 kilogram / meter ** 3,0.0 kilogram / meter ** 3
+160,298.15 kelvin,101.0 kilopascal,2,1,C1CCS(=O)(=O)C1,1.0,,,,,,,44.0 dimensionless,0.0 dimensionless,,,1266.5 kilogram / meter ** 3,0.0 kilogram / meter ** 3
+161,303.15 kelvin,101.325 kilopascal,2,1,CC(C)(CO)N,1.0,,,,,,,20.59 dimensionless,0.0 dimensionless,,,926.403 kilogram / meter ** 3,0.0 kilogram / meter ** 3
+162,298.15 kelvin,101.0 kilopascal,2,1,CCCOCCO,1.0,,,,,,,11.5 dimensionless,0.0 dimensionless,,,908.19 kilogram / meter ** 3,0.0 kilogram / meter ** 3
+163,298.15 kelvin,101.0 kilopascal,2,1,C(COCCOCCO)O,1.0,,,,,,,23.07 dimensionless,0.0 dimensionless,,,1119.66 kilogram / meter ** 3,0.0 kilogram / meter ** 3
+164,298.15 kelvin,101.325 kilopascal,2,1,CC(=C)C(=O)OCCO,1.0,,,,,,,,,,,1067.1 kilogram / meter ** 3,0.0 kilogram / meter ** 3
+165,293.15 kelvin,101.325 kilopascal,2,1,C(=O)(C(F)(F)F)O,1.0,,,,,,,,,,,1489.1 kilogram / meter ** 3,0.0 kilogram / meter ** 3
+166,296.1 kelvin,101.325 kilopascal,2,1,c1cc(ccc1F)F,1.0,,,,,,,,,,,1146.0 kilogram / meter ** 3,0.0 kilogram / meter ** 3
+167,296.3 kelvin,101.325 kilopascal,2,1,c1c(cc(c(c1F)F)F)F,1.0,,,,,,,,,,,1403.0 kilogram / meter ** 3,0.0 kilogram / meter ** 3
+168,298.15 kelvin,101.325 kilopascal,2,1,c1cc[nH]c1,1.0,,,,,,,,,,,965.95 kilogram / meter ** 3,0.0 kilogram / meter ** 3
+169,298.15 kelvin,101.0 kilopascal,2,1,C1CC(=O)OC1,1.0,,,,,,,41.64 dimensionless,0.0 dimensionless,,,1124.5 kilogram / meter ** 3,0.0 kilogram / meter ** 3
+170,298.15 kelvin,101.325 kilopascal,2,1,C(CBr)Cl,1.0,,,,,,,,,,,1727.88 kilogram / meter ** 3,0.0 kilogram / meter ** 3
+171,298.15 kelvin,101.325 kilopascal,2,1,C(CCl)CBr,1.0,,,,,,,,,,,1588.17 kilogram / meter ** 3,0.0 kilogram / meter ** 3
+172,298.15 kelvin,101.325 kilopascal,2,1,C(CCBr)CCl,1.0,,,,,,,,,,,1485.12 kilogram / meter ** 3,0.0 kilogram / meter ** 3
+173,293.2195 kelvin,100.049 kilopascal,2,1,C(C(F)(F)F)F,1.0,,,,,,,,,,,4.27519 kilogram / meter ** 3,0.0 kilogram / meter ** 3
+174,293.0 kelvin,101.325 kilopascal,2,1,C=CCCl,1.0,,,,,,,,,,,937.5 kilogram / meter ** 3,0.0 kilogram / meter ** 3
+175,303.15 kelvin,101.325 kilopascal,2,1,CN(C)CCO,1.0,,,,,,,17.18 dimensionless,0.0 dimensionless,,,879.57 kilogram / meter ** 3,0.0 kilogram / meter ** 3
+176,298.15 kelvin,101.325 kilopascal,2,1,C1CCC(=O)C1,1.0,,,,,,,13.49 dimensionless,0.0 dimensionless,,,944.107 kilogram / meter ** 3,0.0 kilogram / meter ** 3
+177,303.28 kelvin,100.4 kilopascal,2,1,C(=C(F)F)(C(F)(F)F)F,1.0,,,,,,,,,,,6.09 kilogram / meter ** 3,0.0 kilogram / meter ** 3
+178,293.15 kelvin,101.325 kilopascal,2,1,c1ccoc1,1.0,,,,,,,,,,,937.505 kilogram / meter ** 3,0.0 kilogram / meter ** 3
+179,298.15 kelvin,101.325 kilopascal,2,1,C(C(C(C(C(F)(F)Br)(F)F)(F)F)(F)F)(C(C(C(F)(F)F)(F)F)(F)F)(F)F,1.0,,,,,,,,,,,1914.8 kilogram / meter ** 3,0.0 kilogram / meter ** 3
+180,289.15 kelvin,101.325 kilopascal,2,1,CC=O,1.0,,,,,,,,,,,788.02 kilogram / meter ** 3,0.0 kilogram / meter ** 3
+181,298.15 kelvin,101.0 kilopascal,2,1,CC(=O)c1cccs1,1.0,,,,,,,29.19 dimensionless,0.0 dimensionless,,,1166.29 kilogram / meter ** 3,0.0 kilogram / meter ** 3
+182,293.15 kelvin,101.0 kilopascal,2,1,C(C(Br)Br)(Br)Br,1.0,,,,,,,,,,,2963.2 kilogram / meter ** 3,0.0 kilogram / meter ** 3
+183,298.15 kelvin,101.325 kilopascal,2,1,C(Cl)(Cl)(Cl)Br,1.0,,,,,,,,,,,2002.14 kilogram / meter ** 3,0.0 kilogram / meter ** 3
+184,298.15 kelvin,101.0 kilopascal,2,1,c1cnc(nc1O)O,1.0,,,,,,,,,,,1097.6 kilogram / meter ** 3,0.0 kilogram / meter ** 3
+185,303.15 kelvin,101.325 kilopascal,2,1,CSSC,1.0,,,,,,,,,,,1051.14 kilogram / meter ** 3,0.0 kilogram / meter ** 3

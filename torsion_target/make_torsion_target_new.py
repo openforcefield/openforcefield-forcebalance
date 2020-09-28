@@ -94,15 +94,18 @@ def download_torsiondrive_data(dataset_name):
     for i, td_record in enumerate(client.query_procedures(id=td_record_ids), 1):
         entry_index, attributes = map_record_id_entry_index[td_record.id]
         print(f"{i:5d} : {entry_index:50s} status {td_record.status}")
-        if td_record.status == 'COMPLETE':
-            torsiondrive_data[entry_index] = {
-                'initial_molecules': client.query_molecules(td_record.initial_molecule),
-                'final_molecules': td_record.get_final_molecules(),
-                'final_energies': td_record.get_final_energies(),
-                'final_gradients': {gid: np.array(res.return_result) for gid, res in td_record.get_final_results().items()},
-                'keywords': td_record.keywords.dict(),
-                'attributes': attributes,
-            }
+        if td_record.status == 'COMPLETE':            
+            try:
+                torsiondrive_data[entry_index] = {
+                    'initial_molecules': client.query_molecules(td_record.initial_molecule),
+                    'final_molecules': td_record.get_final_molecules(),
+                    'final_energies': td_record.get_final_energies(),
+                    'final_gradients': {gid: np.array(res.return_result) for gid, res in td_record.get_final_results().items()},
+                    'keywords': td_record.keywords.dict(),
+                    'attributes': attributes,
+                }
+            except: 
+                print( 'Problem in storing torsiondrive_data for ', entry_index)
     print(f'Downloaded torsion drive data for {len(torsiondrive_data)} completed entries')
     # save as pickle file
     with open('torsiondrive_data.pickle', 'wb') as pfile:

@@ -58,8 +58,12 @@ def load_final_molecules(dataset_name):
     map_optRecordId_mIndex = {}
     for m_index in ds.df.index:
         data_entry = ds.get_entry(m_index)
-        optRecordId = data_entry.object_map[spec_name]
-        map_optRecordId_mIndex[optRecordId] = m_index
+        try:
+            optRecordId = data_entry.object_map[spec_name]
+            map_optRecordId_mIndex[optRecordId] = m_index
+        except: 
+            print('object map is empty?')
+            print(f'name: {data_entry.name}, object_map:{data_entry.object_map}')
     print(f"Found {len(map_optRecordId_mIndex)} optimization records")
     # query all opt records at the same time
     optRecord_ids = list(map_optRecordId_mIndex.keys())
@@ -100,23 +104,27 @@ def get_int_fmt_string(n):
 
 def write_molecule_files(molecule, name, test_ff=None):
     qcjson_mol = molecule.dict(encoding='json')
-    oemol = cmiles.utils.load_molecule(qcjson_mol)
-    # write the mol2 file and xyz file
-    for ext in ['xyz', 'mol2']:
-        ofs.open(f'{name}.{ext}')
-        oechem.OEWriteMolecule(ofs, oemol)
-        ofs.close()
-    success = True
-    err_msg = ""
-    # test if bonds changed
-    bond_set = {(a,b) for a,b,v in molecule.connectivity}
-    if not check_connectivity(bond_set, f'{name}.mol2'):
+    try: 
+        oemol = cmiles.utils.load_molecule(qcjson_mol)
+        # write the mol2 file and xyz file
+        for ext in ['xyz', 'mol2']:
+            ofs.open(f'{name}.{ext}')
+            oechem.OEWriteMolecule(ofs, oemol)
+            ofs.close()
+        success = True
+        err_msg = ""
+        # test if bonds changed
+        bond_set = {(a,b) for a,b,v in molecule.connectivity}
+        if not check_connectivity(bond_set, f'{name}.mol2'):
+            success = False
+            err_msg = "Bonds changed after rebuild"
+            if not os.path.exists('../err_bonds_changed'):
+                os.mkdir('../err_bonds_changed')
+            shutil.move(f'{name}.mol2', f'../err_bonds_changed/{name}.mol2')
+            os.remove(f'{name}.xyz')
+    except: 
         success = False
-        err_msg = "Bonds changed after rebuild"
-        if not os.path.exists('../err_bonds_changed'):
-            os.mkdir('../err_bonds_changed')
-        shutil.move(f'{name}.mol2', f'../err_bonds_changed/{name}.mol2')
-        os.remove(f'{name}.xyz')
+        err_msg = 'cmiles can not load the molecule. The molecule may have elements that are unacceptable. (e.g. Si)'
     # test if can be created by the test_ff
     if success == True and test_ff != None:
         from openforcefield.topology import Molecule as Off_Molecule

@@ -79,7 +79,8 @@ def download_hessian_data(dataset_name):
     basis = spec_dict['basis']
     print(f"Specs for [ {dataset_name} ] loaded\n{spec_dict}")
     # download data for all molecules
-    dict_mol_id_entry_name = {rec.molecule_id: rec.name for rec in ds.data.records}
+    # dict_mol_id_entry_name = {rec.molecule_id: rec.name for rec in ds.data.records}
+    dict_mol_id_entry_name = {row["molecule_id"]: row["name"] for index, row in ds.get_entries().iterrows()}
     print(f"Found total {len(dict_mol_id_entry_name)} molecule entries")
     all_mol_ids = list(dict_mol_id_entry_name.keys())
     entry_molecule_dict = {}
@@ -173,41 +174,54 @@ def make_vib_freq_target(dataset_name, hessian_data, test_ff=None):
             notefile.write(f'Target generated from dataset {dataset_name}, entry {entry_index}')
         # write input.mol2 file
         qcjson_mol = qcmol.dict(encoding='json')
-        oemol = cmiles.utils.load_molecule(qcjson_mol)
-        ofs.open('input.mol2')
-        oechem.OEWriteMolecule(ofs, oemol)
-        ofs.close()
-        # test mol2 file
         success = True
-        # test if bonds changed
-        if not check_connectivity('input.mol2'):
-            success = False
-            msg = "Bonds changed after rebuild"
-        if success and test_ff != None:
-            success, msg, molecule_labels = test_ff_mol2(test_ff, 'input.mol2')
-        if not success:
+        try:
+            oemol = cmiles.utils.load_molecule(qcjson_mol)
+            ofs.open('input.mol2')
+            oechem.OEWriteMolecule(ofs, oemol)
+            ofs.close()
+            # test if bonds changed
+            if not check_connectivity('input.mol2'):
+                success = False
+                msg = "Bonds changed after rebuild"
+            if success and test_ff != None:
+                success, msg, molecule_labels = test_ff_mol2(test_ff, 'input.mol2')
+            if not success:
+                if not os.path.exists('../error_mol2s'):
+                    os.mkdir('../error_mol2s')
+                shutil.move(f'input.mol2', f'../error_mol2s/{target_name}.mol2')
+                with open(f'../error_mol2s/{target_name}_error.txt', 'w') as notefile:
+                    notefile.write(f'{dataset_name}\ntarget_name {target_name}\n')
+                    notefile.write(f'entry {entry_index}\n')
+                    notefile.write(f'error message:\n{msg}')
+                # remove this folder
+                os.chdir('..')
+                shutil.rmtree(target_name)
+                print("Error: " + msg.replace('\n', ';'))
+            else:
+                # write conf.pdb file
+                fbmol = Molecule(f'input.mol2')
+                fbmol.write(f'conf.pdb')
+                # write vdata.txt for this target
+                create_vdata_txt('conf.pdb', data)
+                print(f'Success')
+                # finish this target
+                target_names.append(target_name)
+                os.chdir('..')
+            target_idx += 1
+        except: 
             if not os.path.exists('../error_mol2s'):
                 os.mkdir('../error_mol2s')
-            shutil.move(f'input.mol2', f'../error_mol2s/{target_name}.mol2')
+            err_msg = 'cmiles can not load the molecule. The molecule may have elements that are unacceptable. (e.g. Si)'            
             with open(f'../error_mol2s/{target_name}_error.txt', 'w') as notefile:
                 notefile.write(f'{dataset_name}\ntarget_name {target_name}\n')
                 notefile.write(f'entry {entry_index}\n')
-                notefile.write(f'error message:\n{msg}')
+                notefile.write(f'error message:\n{errmsg}')
             # remove this folder
             os.chdir('..')
             shutil.rmtree(target_name)
-            print("Error: " + msg.replace('\n', ';'))
-        else:
-            # write conf.pdb file
-            fbmol = Molecule(f'input.mol2')
-            fbmol.write(f'conf.pdb')
-            # write vdata.txt for this target
-            create_vdata_txt('conf.pdb', data)
-            print(f'Success')
-            # finish this target
-            target_names.append(target_name)
-            os.chdir('..')
-        target_idx += 1
+            print("Error: " + errmsg.replace('\n', ';'))
+
     # write targets.{dataset_name}.in file
     target_in_fnm = f"targets.{dataset_name.replace(' ', '_')}.in"
     with open(target_in_fnm, 'w') as outfile:
@@ -327,7 +341,8 @@ def main():
     hessian_data = filter_hessian_data(hessian_data)
 
     # create a ForceField object for testing
-    test_ff = ForceField(args.test_ff_fnm)
+    # test_ff = ForceField(args.test_ff_fnm)
+    test_ff = ForceField(args.test_ff_fnm, allow_cosmetic_attributes=True)
     # step 3: generate one target for each data entry
     make_vib_freq_target(args.dataset, hessian_data, test_ff=test_ff)
 

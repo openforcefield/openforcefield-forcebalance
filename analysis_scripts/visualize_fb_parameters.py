@@ -6,12 +6,12 @@ import matplotlib
 matplotlib.use('Agg')
 matplotlib.rc('ytick', labelsize=6)
 import matplotlib.pyplot as plt
-
-
+import sys
 
 def read_fb_params(filename):
     readlines = open(filename).readlines()
     param_list = collections.OrderedDict()
+    unit_dict = {}
     # count the number of steps found
     n_steps = 0
     # find the initial paramters
@@ -25,6 +25,9 @@ def read_fb_params(filename):
             if len(ls) == 6:
                 idx, value = ls[0], float(ls[2])
                 ptype = '/'.join(ls[5].split('/')[:-1])
+                #ForceBalance output file lists pytpes differently between GROMACS and OpenMM
+                #Uncomment the below line to work with GROMACS output
+                #ptype = ls[5].split(':')[0]
                 name = idx + ': ' + ls[5].split('/')[-1]
                 if ptype not in param_list:
                     param_list[ptype] = dict()
@@ -57,7 +60,10 @@ def read_fb_params(filename):
             ls = line.split()
             if len(ls) == 10:
                 idx, value = ls[0], float(ls[6])
+                #ForceBalance output file lists pytpes differently between GROMACS and OpenMM
+                #Uncomment the below line to work with GROMACS output
                 ptype = '/'.join(ls[9].split('/')[:-1])
+                #ptype = ls[9].split(':')[0]
                 name = idx + ': ' + ls[9].split('/')[-1]
                 if ptype not in param_list:
                     param_list[ptype] = dict()
@@ -68,13 +74,27 @@ def read_fb_params(filename):
                 found_step = False
     # check we have the same number of steps for each parameter
     for ptype in param_list:
+        if "BONDSB" == ptype:
+            unit_dict[ptype] = 'Parameter Value (nm)'
+        elif "BONDSK" == ptype:
+            unit_dict[ptype] = r'Parameter Value (kJ $\rmmol^{-1} \ nm^{-2}$)'
+        elif "ANGLESB" == ptype:
+            unit_dict[ptype] = r'Parameter Value ($^{\circ}$)'
+        elif "ANGLESK" == ptype:
+            unit_dict[ptype] = r'Parameter Value (kJ $\rm mol^{-1} \ rad^{-2}$)'
+        elif "PDIHMULS" in ptype and "B" in ptype:
+            unit_dict[ptype] = r'Parameter Value ($^{\circ}$)'
+        elif "PDIHMULS" in ptype and "K" in ptype:
+            unit_dict[ptype] = r'Parameter Value (kJ $\rm mol^{-1} \ rad^{-2}$)'
+        else:
+            unit_dict[ptype] = 'Parameter Value'
         for name in param_list[ptype]:
             if name != 'PriorWidth' and len(param_list[ptype][name]) != n_steps:
                 raise RuntimeError("Inconsistent number of steps for %s/%s"%(ptype, name))
-    return param_list
+    return param_list, unit_dict
 
 
-def plot_paramters(param_list):
+def plot_paramters(param_list, unit_dict):
     for ptype in param_list:
         # sort the parameters by their changes
         names, values = [], []
@@ -98,91 +118,54 @@ def plot_paramters(param_list):
         y_pos = np.arange(len(names))
         # adjust the size of the figure
         plt.figure(figsize=(8.5,len(names)*0.12+0.8))
+        if ptype in unit_dict:
+            plt.xlabel(unit_dict[ptype])
         # linewidth
         lw = None
         # plot the initial parameters
-        plt.barh(y_pos, initial_values, tick_label=names, height=0.8, color='C0', align='center', linewidth=lw)
+        final_values = initial_values + value_changes
+        xmin = min(initial_values.min(), final_values.min())
+        xmax = max(initial_values.max(), final_values.max())
+        head_length = 0.01*(xmax-xmin)
+        padding = (xmax - xmin) * 0.01
+        plt.xlim(xmin, xmax+padding)
+        if prior_value is not None:
+            initial_values[0] = prior_value[0]
+        plt.scatter(initial_values, y_pos, marker='o', s=80, facecolors='none', edgecolors='grey')
+        plt.yticks(y_pos, names)
         # plot the changes in the final parameters
         increase_idxs = np.nonzero(value_changes >=0)[0]
         decrease_idxs = np.nonzero(value_changes <0)[0]
-        plt.barh(y_pos[increase_idxs], value_changes[increase_idxs], left=initial_values[increase_idxs], height=0.6, color='C2', align='center', linewidth=lw)
-        plt.barh(y_pos[decrease_idxs], value_changes[decrease_idxs], left=initial_values[decrease_idxs], height=0.6, color='C3', align='center', linewidth=lw)
+        for i in increase_idxs:
+            if abs(value_changes[i]) > head_length:
+                plt.arrow(initial_values[i], y_pos[i], value_changes[i], 0.0, head_width=0.4, head_length=head_length, length_includes_head=True, width=0.05, color='C3')
+        for i in decrease_idxs:
+            if abs(value_changes[i]) > head_length:
+                plt.arrow(initial_values[i], y_pos[i], value_changes[i], 0.0, head_width=0.4, head_length=head_length, length_includes_head=True, width=0.05, color='C3')
         ## plot the prior width
-        if prior_value is not None:
-            plt.barh([0], prior_value, height=0.8, color='C4', align='center', linewidth=lw)
         plt.title(ptype)
         # adjust the y range
-        plt.ylim(y_pos[0]-1, y_pos[-1]+1)
+        plt.ylim(y_pos[-1]+1, y_pos[0]-1)
         # adjust the x range
-        final_values = initial_values + value_changes
-        xmin = min(initial_values.min(), final_values.min(), 0)
-        xmax = max(initial_values.max(), final_values.max())
-        if prior_value is not None:
-            xmax = max(xmax, prior_value)
-        padding = (xmax - xmin) * 0.01
-        plt.xlim(xmin, xmax+padding)
         plt.tight_layout()
         filename = ptype.replace('/', '_') + '.pdf'
         plt.savefig(filename)
         plt.close()
-
-
-def replace_SMIRKs_pattern_with_ids(param_list, ffxml):
-    # read the ffxml to get a replacement dictionary
-    smirk_sid = {}
-    from lxml import etree as ET
-    tree = ET.parse(ffxml)
-    root = tree.getroot()
-    for child in root:
-        ptype_prefix = child.tag
-        ptype_name_replace = {}
-        for fchild in child:
-            params = []
-            if 'smirks' in fchild.attrib and 'id' in fchild.attrib:
-                smirks = fchild.get('smirks')
-                sid = fchild.get('id')
-                ptype_name_replace[smirks] = sid
-        if ptype_name_replace:
-            smirk_sid[ptype_prefix] = ptype_name_replace
-    # use the replacements to update parameter names
-    new_param_list = {}
-    for ptype in param_list:
-        new_param_list[ptype] = {}
-        ptype_prefix = ptype.split('/')[0]
-        for name, value in param_list[ptype].items():
-            if name == 'PriorWidth':
-                new_param_list[ptype][name] = value
-            else:
-                name_split = name.rsplit(maxsplit=1)
-                if len(name_split) == 2:
-                    name_prefix, smirks = name_split
-                    sid = smirk_sid[ptype_prefix].get(smirks, None)
-                    if sid != None:
-                        new_name = name_prefix + ' ' + sid
-                        new_param_list[ptype][new_name] = value
-    return new_param_list
 
 def main():
     import argparse, os, shutil, subprocess
     parser = argparse.ArgumentParser(description='Read a ForceBalance output file, bar plot the difference between initial and final parameters.')
     parser.add_argument('fbout', help='ForceBalance output file')
     parser.add_argument('-o', '--outfolder', default='param_change', help='Folder name to save each plot as a separate file')
-    parser.add_argument('-x', '--ffxml', help='SMIRNOFF Forcefield offxml file, if specified, will use the SMIRKs IDs like b1 instead of the patten like [#6X4:1]-[#6X4:2]')
     args = parser.parse_args()
 
 
-    param_list = read_fb_params(args.fbout)
-
-    # replace SMIRKs pattern with ids for better print
-    if args.ffxml:
-        param_list = replace_SMIRKs_pattern_with_ids(param_list, args.ffxml)
-
-    # create output folder for saving plots
+    param_list, unit_dict = read_fb_params(args.fbout)
     if os.path.exists(args.outfolder):
         shutil.rmtree(args.outfolder)
     os.mkdir(args.outfolder)
     os.chdir(args.outfolder)
-    plot_paramters(param_list)
+    plot_paramters(param_list, unit_dict)
     subprocess.call('pdfunite *.pdf all.pdf', shell=True)
 
 if __name__ == '__main__':

@@ -6,8 +6,7 @@ import matplotlib
 matplotlib.use('Agg')
 matplotlib.rc('ytick', labelsize=6)
 import matplotlib.pyplot as plt
-
-
+import sys
 
 def read_fb_params(filename):
     readlines = open(filename).readlines()
@@ -25,6 +24,9 @@ def read_fb_params(filename):
             if len(ls) == 6:
                 idx, value = ls[0], float(ls[2])
                 ptype = '/'.join(ls[5].split('/')[:-1])
+                #ForceBalance output file lists pytpes differently between GROMACS and OpenMM
+                #Uncomment the below line to work with GROMACS output
+                #ptype = ls[5].split(':')[0]
                 name = idx + ': ' + ls[5].split('/')[-1]
                 if ptype not in param_list:
                     param_list[ptype] = dict()
@@ -57,7 +59,10 @@ def read_fb_params(filename):
             ls = line.split()
             if len(ls) == 10:
                 idx, value = ls[0], float(ls[6])
+                #ForceBalance output file lists pytpes differently between GROMACS and OpenMM
+                #Uncomment the below line to work with GROMACS output
                 ptype = '/'.join(ls[9].split('/')[:-1])
+                #ptype = ls[9].split(':')[0]
                 name = idx + ': ' + ls[9].split('/')[-1]
                 if ptype not in param_list:
                     param_list[ptype] = dict()
@@ -101,31 +106,34 @@ def plot_paramters(param_list):
         # linewidth
         lw = None
         # plot the initial parameters
-        plt.barh(y_pos, initial_values, tick_label=names, height=0.8, color='C0', align='center', linewidth=lw)
+        final_values = initial_values + value_changes
+        xmin = min(initial_values.min(), final_values.min())
+        xmax = max(initial_values.max(), final_values.max())
+        head_length = 0.01*(xmax-xmin)
+        padding = (xmax - xmin) * 0.01
+        plt.xlim(xmin, xmax+padding)
+        if prior_value is not None:
+            initial_values[0] = prior_value[0]
+        plt.scatter(initial_values, y_pos, marker='o', s=80, facecolors='none', edgecolors='grey')
+        plt.yticks(y_pos, names)
         # plot the changes in the final parameters
         increase_idxs = np.nonzero(value_changes >=0)[0]
         decrease_idxs = np.nonzero(value_changes <0)[0]
-        plt.barh(y_pos[increase_idxs], value_changes[increase_idxs], left=initial_values[increase_idxs], height=0.6, color='C2', align='center', linewidth=lw)
-        plt.barh(y_pos[decrease_idxs], value_changes[decrease_idxs], left=initial_values[decrease_idxs], height=0.6, color='C3', align='center', linewidth=lw)
+        for i in increase_idxs:
+            if abs(value_changes[i]) > head_length:
+                plt.arrow(initial_values[i], y_pos[i], value_changes[i], 0.0, head_width=0.4, head_length=head_length, length_includes_head=True, width=0.05, color='C3')
+        for i in decrease_idxs:
+            if abs(value_changes[i]) > head_length:
+                plt.arrow(initial_values[i], y_pos[i], value_changes[i], 0.0, head_width=0.4, head_length=head_length, length_includes_head=True, width=0.05, color='C3')
         ## plot the prior width
-        if prior_value is not None:
-            plt.barh([0], prior_value, height=0.8, color='C4', align='center', linewidth=lw)
         plt.title(ptype)
         # adjust the y range
-        plt.ylim(y_pos[0]-1, y_pos[-1]+1)
+        plt.ylim(y_pos[-1]+1, y_pos[0]-1)
         # adjust the x range
-        final_values = initial_values + value_changes
-        xmin = min(initial_values.min(), final_values.min(), 0)
-        xmax = max(initial_values.max(), final_values.max())
-        if prior_value is not None:
-            xmax = max(xmax, prior_value)
-        padding = (xmax - xmin) * 0.01
-        plt.xlim(xmin, xmax+padding)
         plt.tight_layout()
         filename = ptype.replace('/', '_') + '.pdf'
         plt.savefig(filename)
         plt.close()
-
 
 def replace_SMIRKs_pattern_with_ids(param_list, ffxml):
     # read the ffxml to get a replacement dictionary
@@ -172,11 +180,9 @@ def main():
 
 
     param_list = read_fb_params(args.fbout)
-
     # replace SMIRKs pattern with ids for better print
     if args.ffxml:
         param_list = replace_SMIRKs_pattern_with_ids(param_list, args.ffxml)
-
     # create output folder for saving plots
     if os.path.exists(args.outfolder):
         shutil.rmtree(args.outfolder)

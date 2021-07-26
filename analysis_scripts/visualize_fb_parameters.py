@@ -180,8 +180,10 @@ def main():
 
 
     param_list = read_fb_params(args.fbout)
+    # replace SMIRKs pattern with ids for better print
     if args.ffxml:
         param_list = replace_SMIRKs_pattern_with_ids(param_list, args.ffxml)
+    # create output folder for saving plots
     if os.path.exists(args.outfolder):
         shutil.rmtree(args.outfolder)
     os.mkdir(args.outfolder)

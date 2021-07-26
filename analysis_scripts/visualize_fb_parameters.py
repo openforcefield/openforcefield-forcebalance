@@ -11,7 +11,6 @@ import sys
 def read_fb_params(filename):
     readlines = open(filename).readlines()
     param_list = collections.OrderedDict()
-    unit_dict = {}
     # count the number of steps found
     n_steps = 0
     # find the initial paramters
@@ -74,27 +73,13 @@ def read_fb_params(filename):
                 found_step = False
     # check we have the same number of steps for each parameter
     for ptype in param_list:
-        if "BONDSB" == ptype:
-            unit_dict[ptype] = 'Parameter Value (nm)'
-        elif "BONDSK" == ptype:
-            unit_dict[ptype] = r'Parameter Value (kJ $\rmmol^{-1} \ nm^{-2}$)'
-        elif "ANGLESB" == ptype:
-            unit_dict[ptype] = r'Parameter Value ($^{\circ}$)'
-        elif "ANGLESK" == ptype:
-            unit_dict[ptype] = r'Parameter Value (kJ $\rm mol^{-1} \ rad^{-2}$)'
-        elif "PDIHMULS" in ptype and "B" in ptype:
-            unit_dict[ptype] = r'Parameter Value ($^{\circ}$)'
-        elif "PDIHMULS" in ptype and "K" in ptype:
-            unit_dict[ptype] = r'Parameter Value (kJ $\rm mol^{-1} \ rad^{-2}$)'
-        else:
-            unit_dict[ptype] = 'Parameter Value'
         for name in param_list[ptype]:
             if name != 'PriorWidth' and len(param_list[ptype][name]) != n_steps:
                 raise RuntimeError("Inconsistent number of steps for %s/%s"%(ptype, name))
-    return param_list, unit_dict
+    return param_list
 
 
-def plot_paramters(param_list, unit_dict):
+def plot_paramters(param_list):
     for ptype in param_list:
         # sort the parameters by their changes
         names, values = [], []
@@ -118,8 +103,6 @@ def plot_paramters(param_list, unit_dict):
         y_pos = np.arange(len(names))
         # adjust the size of the figure
         plt.figure(figsize=(8.5,len(names)*0.12+0.8))
-        if ptype in unit_dict:
-            plt.xlabel(unit_dict[ptype])
         # linewidth
         lw = None
         # plot the initial parameters
@@ -160,12 +143,12 @@ def main():
     args = parser.parse_args()
 
 
-    param_list, unit_dict = read_fb_params(args.fbout)
+    param_list = read_fb_params(args.fbout)
     if os.path.exists(args.outfolder):
         shutil.rmtree(args.outfolder)
     os.mkdir(args.outfolder)
     os.chdir(args.outfolder)
-    plot_paramters(param_list, unit_dict)
+    plot_paramters(param_list)
     subprocess.call('pdfunite *.pdf all.pdf', shell=True)
 
 if __name__ == '__main__':
